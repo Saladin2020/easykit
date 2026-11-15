@@ -119,7 +119,7 @@ VillageDemo/
 |---|---|
 | `easykit new <Name> [--template village_delivery] [--engine godot\|pixi\|both] [--seed N] [--dir D] [--force] [--json]` | Scaffold a game with all 12 tools |
 | `easykit build <project> [--engine …]` | Re-assemble `godot/` and `web/` from the exports in `.easy/` |
-| `easykit check <project> [--no-godot] [--no-web] [--shots DIR] [--frames]` | Godot import + headless test, web check in headless Chrome, screenshots / GIF frames |
+| `easykit check <project> [--no-godot] [--no-web] [--shots DIR] [--frames]` | Godot import (retried once if the first headless pass flakes; under xvfb + opengl3) + headless test, web check in headless Chrome, screenshots / GIF frames |
 | `easykit doctor [--json]` | Installed tools, versions, git commit, build state; Godot, Chrome, xvfb |
 | `easykit status [path]` | One project or every project in a folder |
 | `easykit tools` | The 12 tools, roles and ports |
