@@ -1,0 +1,8 @@
+{
+  "suiteDir": "..",
+  "tools": {
+    "sprite": "../easysprite-work"
+  },
+  "godot": "/opt/godot/Godot_v4.3-stable_linux.x86_64",
+  "chrome": "/usr/bin/google-chrome"
+}

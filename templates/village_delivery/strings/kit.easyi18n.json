@@ -1,0 +1,222 @@
+{
+  "format": "easyi18n/1",
+  "id": "kit",
+  "source": "th",
+  "locales": [
+    "th",
+    "en",
+    "ms"
+  ],
+  "strings": {
+    "kit.title.press": {
+      "th": "กด Enter เพื่อเริ่มเล่น",
+      "en": "Press Enter to start",
+      "ms": "Tekan Enter untuk mula",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.title.continue": {
+      "th": "F9 เล่นต่อจากที่บันทึกไว้",
+      "en": "F9 continue from your save",
+      "ms": "F9 sambung dari simpanan",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.title.keys": {
+      "th": "ลูกศร/WASD เดิน · E คุย · L เปลี่ยนภาษา · F5 บันทึก · F9 โหลด",
+      "en": "Arrows/WASD walk · E talk · L language · F5 save · F9 load",
+      "ms": "Anak panah/WASD jalan · E cakap · L bahasa · F5 simpan · F9 muat",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.title.lang": {
+      "th": "ภาษา: {lang} (กด L)",
+      "en": "Language: {lang} (press L)",
+      "ms": "Bahasa: {lang} (tekan L)",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.skip": {
+      "th": "Esc ข้ามฉาก",
+      "en": "Esc to skip",
+      "ms": "Esc untuk langkau",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.prompt.talk": {
+      "th": "E · คุยกับ{name}",
+      "en": "E · Talk to {name}",
+      "ms": "E · Bercakap dengan {name}",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.prompt.shop": {
+      "th": "E · ร้านของ{name}",
+      "en": "E · {name}'s stall",
+      "ms": "E · Gerai {name}",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.quest.label": {
+      "th": "ภารกิจ",
+      "en": "Quest",
+      "ms": "Misi",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.quest.none": {
+      "th": "ไปหาป้าแดงที่ตลาด",
+      "en": "Find Auntie Daeng at the market",
+      "ms": "Cari Mak Daeng di pasar",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.quest.done": {
+      "th": "ภารกิจสำเร็จ!",
+      "en": "Quest complete!",
+      "ms": "Misi selesai!",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.quest.step": {
+      "th": "สำเร็จ: {step}",
+      "en": "Done: {step}",
+      "ms": "Selesai: {step}",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.coins": {
+      "th": "{n} ฿",
+      "en": "฿{n}",
+      "ms": "฿{n}",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.toast.lang": {
+      "th": "ภาษาไทย",
+      "en": "English",
+      "ms": "Bahasa Melayu",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.toast.nosave": {
+      "th": "ยังไม่มีไฟล์บันทึก",
+      "en": "No save yet",
+      "ms": "Belum ada simpanan",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.toast.bought": {
+      "th": "ซื้อ {item} แล้ว",
+      "en": "Bought {item}",
+      "ms": "Beli {item}",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pa_daeng.name": {
+      "th": "ป้าแดง",
+      "en": "Auntie Daeng",
+      "ms": "Mak Daeng",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.luang_phi.name": {
+      "th": "หลวงพี่",
+      "en": "the venerable brother",
+      "ms": "Tok Sami",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.lung_mee.name": {
+      "th": "ลุงมี",
+      "en": "Uncle Mee",
+      "ms": "Pak Cik Mee",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.ta_poem.name": {
+      "th": "ตาเพิ่ม",
+      "en": "Grandpa Phoem",
+      "ms": "Tok Phoem",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.bang_roti.name": {
+      "th": "บังโรตี",
+      "en": "Bang Roti",
+      "ms": "Abang Roti",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.kak_fatimah.name": {
+      "th": "กะฟาตีมะห์",
+      "en": "Kak Fatimah",
+      "ms": "Kak Fatimah",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.adam.name": {
+      "th": "อาดัม",
+      "en": "Adam",
+      "ms": "Adam",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pak_cik_ismail.name": {
+      "th": "ปะจิอิสมาแอล",
+      "en": "Pak Cik Ismail",
+      "ms": "Pak Cik Ismail",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.aisyah.name": {
+      "th": "อาอีชะห์",
+      "en": "Aisyah",
+      "ms": "Aisyah",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pak_hamid.name": {
+      "th": "ปะฮามิด",
+      "en": "Pak Hamid",
+      "ms": "Pak Hamid",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pa_daeng.bark": {
+      "th": "ขอบใจนะต้น พรุ่งนี้มาช่วยป้าอีกนะ",
+      "en": "Thank you, Ton! Come help me again tomorrow.",
+      "ms": "Terima kasih, Ton! Datang tolong mak cik esok ya.",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.luang_phi.bark": {
+      "th": "เจริญพร ต้น เช้านี้อากาศดีนะ",
+      "en": "Good morning, Ton. Lovely weather today.",
+      "ms": "Selamat pagi, Ton. Cuaca baik hari ini.",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.lung_mee.bark": {
+      "th": "นาข้าวปีนี้งามดีนะหลาน",
+      "en": "The paddy looks good this year, lad.",
+      "ms": "Sawah padi cantik tahun ini, nak.",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.ta_poem.bark": {
+      "th": "นั่งพักก่อนไหมหลาน",
+      "en": "Sit and rest a while, grandson?",
+      "ms": "Duduklah rehat sekejap, cu?",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.kak_fatimah.bark": {
+      "th": "สลามต้น! พรุ่งนี้แวะมาตาดีกานะ",
+      "en": "Salam, Ton! Drop by the tadika tomorrow.",
+      "ms": "Salam, Ton! Singgah tadika esok ya.",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.adam.bark": {
+      "th": "ต้น! ส่งของเสร็จแล้วไปเตะบอลกัน",
+      "en": "Ton! Football after your deliveries?",
+      "ms": "Ton! Main bola lepas hantar barang?",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pak_cik_ismail.bark": {
+      "th": "ร้อนนะวันนี้ ดื่มชาชักสักแก้วไหม",
+      "en": "Hot today. Fancy a teh tarik?",
+      "ms": "Panas hari ini. Nak teh tarik?",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.aisyah.bark": {
+      "th": "พรุ่งนี้มีงานวันเด็กที่ตาดีกานะ",
+      "en": "Children's day fair at the tadika tomorrow!",
+      "ms": "Esok ada hari kanak-kanak di tadika!",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.pak_hamid.bark": {
+      "th": "เช้านี้ได้ปลาทูเต็มลำเรือเลย",
+      "en": "A full boat of mackerel this morning!",
+      "ms": "Pagi ni penuh bot ikan kembung!",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.npc.bang_roti.bark": {
+      "th": "โรตีร้อนๆ มาแล้วจ้า",
+      "en": "Hot roti, fresh off the pan!",
+      "ms": "Roti panas, baru angkat!",
+      "note": "Easy Kit village_delivery template"
+    }
+  }
+}

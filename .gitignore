@@ -1,0 +1,15 @@
+node_modules/
+dist/
+web/dist/
+.scratch/
+# generated games (sprite sheets and every other generated asset stay in the user's project)
+/projects/
+/preview/
+*.easykit-out/
+/easykit.config.json
+*.log
+.DS_Store
+.env
+.env.*
+.cursor/
+*.local.json

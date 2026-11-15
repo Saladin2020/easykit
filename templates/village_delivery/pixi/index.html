@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Easy Kit game</title>
+  <link rel="icon" href="data:," />
+  <style>
+    html, body { margin: 0; height: 100%; background: #0d0906; color: #f3e6cf; font-family: Kanit, system-ui, sans-serif; }
+    body { display: grid; place-items: center; }
+    #game canvas { width: min(100vw, calc(100vh * 16 / 9)); height: auto; image-rendering: pixelated; display: block; }
+    #err { position: fixed; left: 8px; bottom: 8px; color: #ff8a7a; font-size: 13px; white-space: pre-wrap; }
+    noscript { padding: 2em; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="err"></div>
+  <noscript>This game needs JavaScript.</noscript>
+  <script type="module">
+    async function loadPixi() {
+      const tryScript = (src) => new Promise((ok, fail) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fail; document.head.append(s); });
+      try { await tryScript("./pixi.min.js"); } catch { await tryScript("https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"); }
+      return window.PIXI;
+    }
+    try {
+      const PIXI = await loadPixi();
+      const { startGame } = await import("./game.js");
+      await startGame(PIXI, document.getElementById("game"));
+    } catch (e) {
+      console.error(e);
+      document.getElementById("err").textContent = "Easy Kit: " + (e && e.stack || e);
+      window.__error = String(e && e.message || e);
+    }
+  </script>
+</body>
+</html>
