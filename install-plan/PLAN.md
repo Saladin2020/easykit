@@ -18,3 +18,9 @@ Nothing below has been run against `/workspace/indie-studio`. Apply only after t
 
 Ports: dashboard 8908, MCP HTTP 8909, Vite 5187, web check 8989 (Easy Save 8898 / 8899 / 5186, Easy Items
 8878 / 8879 / 5185).
+
+## Next: five more tools (planned on branch `plan/easy-suite-18`)
+
+Easy Battle, Easy Font, Easy NPC, Easy Portrait and Easy Ship are built locally in `/workspace/easy-new/<tool>`
+(each with its own `install-plan/`). Wiring them into Easy Kit, the new pipeline order and the studio install
+steps are in [`docs/INTEGRATION-18.md`](../docs/INTEGRATION-18.md). Not applied yet.
