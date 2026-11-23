@@ -217,6 +217,24 @@
       "en": "Hot roti, fresh off the pan!",
       "ms": "Roti panas, baru angkat!",
       "note": "Easy Kit village_delivery template"
+    },
+    "kit.battle.win": {
+      "th": "ชนะแล้ว! ได้ {n} บาท",
+      "en": "You won! +{n} baht",
+      "ms": "Menang! +{n} baht",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.battle.lose": {
+      "th": "แพ้แล้ว… พักให้หายเหนื่อยก่อนนะ",
+      "en": "Defeated… rest up and try again",
+      "ms": "Kalah… rehat dulu, cuba lagi",
+      "note": "Easy Kit village_delivery template"
+    },
+    "kit.battle.fled": {
+      "th": "หนีออกมาจากทุ่งนาได้",
+      "en": "You got away from the paddy",
+      "ms": "Berjaya lari dari sawah",
+      "note": "Easy Kit village_delivery template"
     }
   }
 }
