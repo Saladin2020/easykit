@@ -37,7 +37,7 @@ The five repos are github.com/Saladin2020/easy<tool>; each has its own `install-
    portrait strip, the NPC clock and the font atlas (same Playwright/Chrome harness, `app.render()` before readback).
 4. MCP (`src/mcp/server.ts`): `kit_new` / `kit_rebuild` accept `steps` including the new ids; add `kit_ship_plan`
    (plan only, no build/upload over MCP).
-5. Templates: `village_delivery` gains `portraits: true`, `npcs: true`, `font: "makham-12"`; a second template
+5. Templates: `village_delivery` gains `portraits: true`, `npcs: true`, `font: "makham-12"` (since the มะขาม 16 switch: `{hud: "makham-16", small: "makham-8", dialogue: "makham-16"}`; older projects keep มะขาม 12 unless rebuilt with `easykit build <project> --font makham-16`); a second template
    `village_battle` (optional) enables Easy Battle.
 6. Tests: unit tests for the new `ToolSpec`s and step ordering; integration tests run only when all 17 tools resolve
    (same skip rule as today). Expect the current 37 (+3) to grow by roughly 10.

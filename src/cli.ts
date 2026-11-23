@@ -47,9 +47,10 @@ program
   .description("Re-assemble godot/ and web/ from the tool exports in <project>/.easy")
   .argument("<project>")
   .option("--engine <engine>", "godot | pixi | both")
+  .option("--font <id>", "Opt in to another pixel font for HUD + dialogue, e.g. makham-16 (default: keep the project's font)")
   .option("--json")
   .action(async (project: string, o) => {
-    const m = await rebuildProject(path.resolve(project), { engine: o.engine });
+    const m = await rebuildProject(path.resolve(project), { engine: o.engine, font: o.font });
     print(!!o.json, m, () => m.steps.filter((s) => s.tool === "kit").map((s) => `${s.title}: ${s.notes.join("; ")}`).join("\n"));
   });
 

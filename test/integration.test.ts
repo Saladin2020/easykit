@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { newProject, type ProjectManifest } from "../src/lib/pipeline.js";
+import { dialogueFitIssues } from "../src/lib/godot.js";
+import { newProject, rebuildProject, type ProjectManifest } from "../src/lib/pipeline.js";
 import { shipProject } from "../src/lib/ship.js";
 import { BUILD_IDS, CORE_TOOL_IDS } from "../src/lib/tools.js";
 import { OPTIONAL_SIBLINGS, SIBLINGS, tempDir } from "./helpers.js";
@@ -52,10 +53,37 @@ describe.skipIf(!SIBLINGS)("easykit new (12 core sibling tools + the optional on
       expect(kit.battle.party.map((p: { id: string }) => p.id)).toEqual(["ton", "adam"]);
     }
     const th = JSON.parse(await readFile(path.join(root, "godot", "dialogue", "village_delivery.th.dialogue.json"), "utf8"));
-    expect(th.assets.fontFiles.body).toBe("res://easyfont/makham-12.fnt");
-    expect(th.ui.layout.text.fontSize).toBe(12);
-    for (const f of ["godot/easybattle/heroes/ton.png", "web/battle/heroes/ton.png", "web/font/fonts/makham-12.fnt", "web/portrait/portraits.json", "web/npc/easynpc.world.json"]) expect(existsSync(path.join(root, f)), f).toBe(true);
+    expect(th.assets.fontFiles.body).toBe("res://easyfont/makham-16.fnt");
+    expect(th.ui.kitFont).toBe("makham-16");
+    expect(th.ui.layout.text.fontSize).toBe(16);
+    expect(th.ui.layout.text.lineHeight).toBe(22);
+    expect(dialogueFitIssues(th.ui.layout)).toEqual([]);
+    const m = JSON.parse(await readFile(path.join(root, "easykit.project.json"), "utf8")) as ProjectManifest;
+    expect(m.choices.font).toEqual({ hud: "makham-16", small: "makham-8", dialogue: "makham-16" });
+    for (const f of ["godot/easybattle/heroes/ton.png", "web/battle/heroes/ton.png", "web/font/fonts/makham-16.fnt", "web/portrait/portraits.json", "web/npc/easynpc.world.json"]) expect(existsSync(path.join(root, f)), f).toBe(true);
   });
+
+  it.skipIf(!has("font"))("keeps the font of an older project on rebuild; --font opts in to มะขาม 16", async () => {
+    const root = path.join(dir, "ItDemo");
+    const mp = path.join(root, "easykit.project.json");
+    const thPath = path.join(root, "godot", "dialogue", "village_delivery.th.dialogue.json");
+    const m = JSON.parse(await readFile(mp, "utf8")) as ProjectManifest;
+    delete (m.choices as { font?: unknown }).font; // a project made before the switch
+    await writeFile(mp, JSON.stringify(m, null, 2));
+    await rebuildProject(root, { engine: "both" });
+    let th = JSON.parse(await readFile(thPath, "utf8"));
+    expect(th.assets.fontFiles.body).toBe("res://easyfont/makham-12.fnt");
+    expect(th.ui.layout.text.lineHeight).toBe(18);
+    const kit = JSON.parse(await readFile(path.join(root, "web", "kit", "kit.json"), "utf8"));
+    expect(kit.font).toEqual({ hud: "makham-12", small: "makham-8", dialogue: "makham-12" });
+
+    const r = await rebuildProject(root, { engine: "both", font: "makham-16" });
+    expect(r.choices.font).toEqual({ hud: "makham-16", small: "makham-8", dialogue: "makham-16" });
+    th = JSON.parse(await readFile(thPath, "utf8"));
+    expect(th.assets.fontFiles.body).toBe("res://easyfont/makham-16.fnt");
+    expect(dialogueFitIssues(th.ui.layout)).toEqual([]);
+    expect(existsSync(path.join(root, "web", "font", "fonts", "makham-16.fnt"))).toBe(true);
+  }, 240_000);
 
   it.skipIf(!has("ship"))("plans a release with Easy Ship and never uploads", async () => {
     const r = await shipProject(path.join(dir, "ItDemo"));

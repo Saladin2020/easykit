@@ -56,8 +56,8 @@ const KIT_TOOLS: Tool[] = [
   {
     name: "build_project",
     title: "Rebuild project",
-    description: "Re-assemble godot/ and web/ of an Easy Kit project from the exports in <project>/.easy (after re-exporting a tool).",
-    inputSchema: { type: "object", properties: { project: { type: "string" }, engine: { type: "string", enum: [...ENGINES] } }, required: ["project"] },
+    description: "Re-assemble godot/ and web/ of an Easy Kit project from the exports in <project>/.easy (after re-exporting a tool). The project keeps its pixel font; pass font (e.g. makham-16) to opt in to another one.",
+    inputSchema: { type: "object", properties: { project: { type: "string" }, engine: { type: "string", enum: [...ENGINES] }, font: { type: "string", pattern: "^[a-z0-9][a-z0-9_-]*$" } }, required: ["project"] },
   },
   {
     name: "check_project",
@@ -169,7 +169,7 @@ export function createKitMcp(opts: KitMcpOptions) {
           return text({ root: path.join(dir, String(args.name)), ok: m.ok, steps: m.steps.map((s) => ({ tool: s.tool, ok: s.ok, ms: s.ms, notes: s.notes })), godot: m.godot && { files: m.godot.files, autoloads: m.godot.autoloads, collisions: m.godot.collisions, dialogue: m.godot.dialogue }, web: m.web && { files: m.web.files, pixi: m.web.pixi } });
         }
         case "build_project": {
-          const m = await rebuildProject(safe(args.project), { engine: args.engine });
+          const m = await rebuildProject(safe(args.project), { engine: args.engine, font: typeof args.font === "string" ? args.font : undefined });
           return text(m.steps.filter((s) => s.tool === "kit"));
         }
         case "check_project": {

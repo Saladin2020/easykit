@@ -404,15 +404,40 @@ function makeCtx(o: { root: string; name: string; seed: number; engine: Engine; 
   };
 }
 
-/** Re-assemble godot/ and/or web/ from the tool exports already in <project>/.easy (after editing glue or exports). */
-export async function rebuildProject(root: string, opts: { engine?: Engine; cfg?: KitConfig; log?: (l: string) => void } = {}): Promise<ProjectManifest> {
+/** Fonts of projects made before มะขาม 16 became the default (their manifests record no font choice). */
+export const LEGACY_FONT = { hud: "makham-12", small: "makham-8", dialogue: "makham-12" } as const;
+
+/** Pixel font ids for a project: a recorded choice wins, older projects keep มะขาม 12, `optIn` switches HUD + dialogue. */
+export function projectFont(tplFont: Template["font"], recorded: unknown, optIn?: string): Template["font"] {
+  if (!tplFont) return undefined;
+  const base = (recorded && typeof recorded === "object" ? (recorded as Template["font"]) : undefined) ?? { ...LEGACY_FONT };
+  if (!optIn) return base;
+  if (!/^[a-z0-9][a-z0-9_-]*$/.test(optIn)) throw new Error(`bad font id "${optIn}"`);
+  return { hud: optIn, small: base!.small, dialogue: optIn };
+}
+
+/** Re-assemble godot/ and/or web/ from the tool exports already in <project>/.easy (after editing glue or exports).
+ *  The project keeps the pixel font it was made with; `font` (e.g. "makham-16") opts in to another one and re-exports
+ *  Easy Font so the new font is there. */
+export async function rebuildProject(root: string, opts: { engine?: Engine; font?: string; cfg?: KitConfig; log?: (l: string) => void } = {}): Promise<ProjectManifest> {
   const mpath = path.join(root, "easykit.project.json");
   if (!(await exists(mpath))) throw new Error(`${root} is not an Easy Kit project (no easykit.project.json)`);
   const m = await readJson<ProjectManifest>(mpath);
-  const tpl = await loadTemplate(m.template);
+  const base = await loadTemplate(m.template);
+  const font = projectFont(base.font, m.choices?.font, opts.font);
+  const tpl: Template = { ...base, font };
   const engine = opts.engine ?? m.engine;
   const ctx = makeCtx({ root, name: m.name, seed: m.seed, engine, tpl, tools: resolveAll(opts.cfg ?? loadKitConfig().config), log: opts.log ?? (() => undefined), choices: m.choices });
+  if (font) ctx.choices.font = font;
+  m.choices = ctx.choices;
   m.steps = m.steps.filter((s) => s.tool !== "kit");
+  if (opts.font && font && ctx.tools.font.home) {
+    const t0 = Date.now();
+    const notes: string[] = [];
+    const outputs = await STEPS.font(ctx, notes);
+    m.steps = m.steps.filter((s) => s.tool !== "font");
+    m.steps.push({ tool: "font", title: STEP_TITLES.font, ok: true, ms: Date.now() - t0, outputs, notes: [...notes, `opted in to ${opts.font}`] });
+  }
   if (engine === "godot" || engine === "both") {
     const t0 = Date.now();
     await rm(path.join(root, "godot"), { recursive: true, force: true });
@@ -448,6 +473,8 @@ export async function newProject(opts: NewProjectOptions): Promise<ProjectManife
   await mkdir(root, { recursive: true });
 
   const ctx = makeCtx({ root, name: opts.name, seed, engine, tpl, tools, log });
+  // record the pixel font so a later `easykit build` keeps it even after the template default changes
+  if (tpl.font) ctx.choices.font = { ...tpl.font };
 
   const rep = doctor({ cfg, engines: false });
   const manifest: ProjectManifest = {

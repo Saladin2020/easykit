@@ -127,6 +127,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(600)
         t = ev("__kit.talker ? { id: __kit.talker.id, visible: __kit.talker.container.visible, talking: __kit.talker.talking } : null")
         check(t and t["id"] == "town_vendor" and t["visible"], f"animated Easy Portrait over the dialogue box ({t})")
+        check(ev("__kit.box.nameText.text") == ev("__kit.ef.shape('ป้าแดง')") and ev("__kit.box.nameText.width") > ev("__kit.ef.measure(__kit.ef.shape('าแดง'), __kit.kit.font.dialogue) + 4"), "name plate shows the whole Thai name (ป้าแดง)")
         shot("07_dialogue_portrait")
         ev("__kit.box.view.visible = false; __kit.talker && (__kit.talker.container.visible = false)")
     if feat.get("npc"):

@@ -214,6 +214,7 @@ export async function startGame(PIXI, mount) {
       b.body.text = "";
       b.body.position.set(Math.round(textX), L.box.y + L.text.padY + (ev.name ? 4 : 0) - 3);
       if (ev.name) {
+        b.nameText.text = ef.shape(ev.name); // names arrive unshaped from scripts; the bitmap font has no plain combining marks
         const pw = Math.ceil(b.nameText.width + L.plate.padX * 2);
         b.plate.width = pw;
         b.nameText.position.set(Math.round(b.plate.x + L.plate.padX), Math.round(b.plate.y + (L.plate.h - f.line) / 2));

@@ -84,7 +84,7 @@ coin sound, the coin-burst particles and the village theme, `--force` replaces a
 | 4 | Easy Dialogue | `village_delivery` story, split per NPC and localised to th / en / ms | CLI `compile`, `export` |
 | 4b | Easy NPC *(optional)* | Daily schedules for 5 villagers (Kak Fatimah, Adam, Pak Cik Ismail, Aisyah, Pak Hamid) on the same map, a day clock with night; quest NPCs stay put | CLI `init`, `export --preset godot\|pixi` |
 | 5 | Easy Quest | Delivery quest (accept → temple → farm → bonus mango → elder → report) + `QuestManager` | CLI `export` |
-| 5b | Easy Font *(optional)* | มะขาม 12 / 8 Thai · Latin · Malay pixel fonts for the HUD and the dialogue box; dialogue text is shaped at build time | CLI `init`, `check`, `export` |
+| 5b | Easy Font *(optional)* | มะขาม 16 / 8 Thai · Latin · Malay pixel fonts for the HUD and the dialogue box (มะขาม 12 for projects made before the switch); dialogue text is shaped at build time and the box is checked to fit the 22 px line | CLI `init`, `check`, `export` |
 | 6 | Easy UI | Teak theme, HUD (wallet, quest panel), fonts | CLI `export` |
 | 7 | Easy SFX | Sound bank with a seeded coin sound, typing blips | CLI `add coin --seed`, `export` |
 | 8 | Easy FX | 8 effects incl. a seeded coin burst (coin, level-up, sparkle, confetti, dust, heal, fireflies, lanterns) | CLI `new --from --set seed=`, `export` |
@@ -121,7 +121,7 @@ With the optional tools installed:
 - **Portraits** (Easy Portrait): the speaker's portrait blinks and moves its mouth while a line types.
 - **Villagers** (Easy NPC): five villagers walk their daily schedules (stall, mosque, home, paddy); the HUD shows the
   weekday and time, nights tint the village, barks name what the villager is doing and raise their friendship.
-- **Pixel font** (Easy Font): HUD labels, prompts, toasts and the dialogue box use มะขาม; the big title stays in Kanit.
+- **Pixel font** (Easy Font): HUD labels, prompts, toasts and the dialogue box use มะขาม 16 (22 px lines; the dialogue box grows upward to hold 3 lines and the build fails if it cannot fit), small labels use มะขาม 8; the big title stays in Kanit. The game renders at 480×270 and is shown at 2× or larger. Projects made before มะขาม 16 keep มะขาม 12 until you run `easykit build <project> --font makham-16`.
 - **Battles** (Easy Battle): walking the paddy (tiles 37–42 × 1–6) triggers encounters, the first one scripted; win
   coins go into the wallet, a loss heals the party. Uncle Mee's spot beside the paddy stays outside the encounter zone.
 - Battle party, villager clock and friendship are saved with F5 (Easy Save `items.npc` / `items.battle`).
@@ -147,7 +147,7 @@ VillageDemo/
 | Command | |
 |---|---|
 | `easykit new <Name> [--template village_delivery] [--engine godot\|pixi\|both] [--seed N] [--dir D] [--force] [--json]` | Scaffold a game with the 12 core tools + the optional ones installed |
-| `easykit build <project> [--engine …]` | Re-assemble `godot/` and `web/` from the exports in `.easy/` |
+| `easykit build <project> [--engine …] [--font <id>]` | Re-assemble `godot/` and `web/` from the exports in `.easy/`; the project keeps its pixel font, `--font makham-16` opts in to another |
 | `easykit check <project> [--no-godot] [--no-web] [--shots DIR] [--frames]` | Godot import (retried once if the first headless pass flakes; under xvfb + opengl3) + headless test, web check in headless Chrome, screenshots / GIF frames |
 | `easykit doctor [--json]` | Installed tools, versions, git commit, build state; Godot, Chrome, xvfb |
 | `easykit status [path]` | One project or every project in a folder |
