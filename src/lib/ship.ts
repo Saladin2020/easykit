@@ -16,6 +16,8 @@ export interface ShipOptions {
   version?: string;
   /** itch.io user/game for later manual uploads; Easy Kit never uploads. */
   itch?: string;
+  /** Android application id for the Godot build (default app.easysuite.<name>); used only when targets include android. */
+  androidPackage?: string;
   cfg?: KitConfig;
 }
 
@@ -37,6 +39,16 @@ export interface ShipResult {
   uploaded: false;
 }
 
+/** A valid Android application id from a project name: app.easysuite.<letters/digits/_>. */
+export function androidPackageFor(name: string): string {
+  let seg = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (!seg) seg = "game";
+  if (!/^[a-z]/.test(seg)) seg = `g${seg}`;
+  return `app.easysuite.${seg}`;
+}
+
+export const ANDROID_PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
+
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "game";
 
 /** Godot / Pixi ship configs for an Easy Kit project, then `easyship plan` (default) or `easyship ship --build`. Never uploads. */
@@ -49,6 +61,8 @@ export async function shipProject(root: string, opts: ShipOptions = {}): Promise
   const targets = (opts.targets ?? "web").split(",").map((t) => t.trim()).filter(Boolean);
   const bad = targets.filter((t) => !(SHIP_TARGETS as readonly string[]).includes(t));
   if (bad.length) throw new Error(`unknown ship target(s): ${bad.join(", ")} (use ${SHIP_TARGETS.join(", ")})`);
+  const androidPkg = targets.includes("android") ? opts.androidPackage ?? androidPackageFor(m.name) : undefined;
+  if (androidPkg && !ANDROID_PACKAGE_RE.test(androidPkg)) throw new Error(`bad Android package "${androidPkg}" (e.g. app.studio.mygame: dot-separated, each part starts with a letter)`);
   const workspace = path.join(root, ".easy", "ship");
   await mkdir(workspace, { recursive: true });
   const env: ToolEnv = { home: tool.home, workspace, allowed: [root] };
@@ -84,6 +98,7 @@ export async function shipProject(root: string, opts: ShipOptions = {}): Promise
       const args = ["new", c.id, "--source", c.source, "--engine", c.engine, "--targets", c.targets];
       for (const l of ["th", "en", "ms"] as const) args.push(`--${l}`, title[l] ?? m.name);
       if (opts.itch) args.push("--itch", opts.itch);
+      if (c.engine === "godot" && androidPkg) args.push("--android-package", androidPkg);
       c.created = await run(c.id, args);
       const cfgPath = path.join(workspace, "ships", `${c.id}.easyship.json`);
       if (c.created && opts.version && (await exists(cfgPath))) {
@@ -91,6 +106,20 @@ export async function shipProject(root: string, opts: ShipOptions = {}): Promise
         j.version = opts.version;
         await writeFile(cfgPath, JSON.stringify(j, null, 2) + "\n");
       }
+    } else if (c.engine === "godot" && androidPkg) {
+      // an existing config made before android was asked for: add the package (and the target) once, keep the rest
+      const cfgPath = path.join(workspace, "ships", `${c.id}.easyship.json`);
+      const j = JSON.parse(await readFile(cfgPath, "utf8")) as { targets?: string[]; android?: { package?: string } };
+      let changed = false;
+      if (!j.android?.package) {
+        j.android = { ...(j.android ?? {}), package: androidPkg };
+        changed = true;
+      }
+      if (Array.isArray(j.targets) && !j.targets.includes("android")) {
+        j.targets.push("android");
+        changed = true;
+      }
+      if (changed) await writeFile(cfgPath, JSON.stringify(j, null, 2) + "\n");
     }
     // `ship` without --upload: a plan is a dry run, --build builds and zips locally. --upload is never passed here.
     await run(c.id, opts.build ? ["ship", c.id, "--build", "--targets", c.targets] : ["plan", c.id, "--targets", c.targets]);

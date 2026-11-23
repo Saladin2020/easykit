@@ -83,9 +83,10 @@ program
   .option("--targets <list>", "Godot targets: web, windows, linux, android (the Pixi build is always web)", "web")
   .option("--release <v>", "Release version for new ship configs (default 0.1.0)")
   .option("--itch <user/game>", "itch.io page for later manual uploads (Easy Kit never uploads)")
+  .option("--android-package <id>", "Android application id when targets include android (default app.easysuite.<name>)")
   .option("--json")
   .action(async (project: string, o) => {
-    const r = await shipProject(path.resolve(project), { build: !!o.build, targets: o.targets, version: o.release, itch: o.itch });
+    const r = await shipProject(path.resolve(project), { build: !!o.build, targets: o.targets, version: o.release, itch: o.itch, androidPackage: o.androidPackage });
     print(!!o.json, r, () =>
       [
         `Easy Ship ${r.mode} · workspace ${r.workspace}`,
