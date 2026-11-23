@@ -80,3 +80,37 @@ export function localizeDialogue<T extends { id: string; nodes: Record<string, {
 export function mergeTables(tables: Array<{ strings: StringTable }>): StringTable {
   return Object.assign({}, ...tables.map((t) => t.strings));
 }
+
+const THAI_CHAR = /[\u0E00-\u0E7F]/;
+
+/**
+ * Mark Thai word boundaries with U+200B (Intl.Segmenter, ICU dictionary) so pixel fonts without a line breaker can
+ * wrap Thai between words. Spaces, Latin and Malay text are left alone.
+ */
+export function breakThai(text: string): string {
+  if (!THAI_CHAR.test(text) || typeof Intl.Segmenter !== "function") return text;
+  const seg = new Intl.Segmenter("th", { granularity: "word" });
+  let out = "";
+  let prevThai = false;
+  for (const { segment } of seg.segment(text)) {
+    const thai = THAI_CHAR.test(segment);
+    if (thai && prevThai && !out.endsWith("\u200b")) out += "\u200b";
+    out += segment;
+    prevThai = thai;
+  }
+  return out;
+}
+
+/** Pre-typeset every line, choice and speaker name for a pixel font: Thai word breaks, then `shape` (Easy Font). */
+export function typesetDialogue<T extends { nodes: Record<string, { body: unknown }>; characters?: Record<string, { name?: string }> }>(doc: T, shape: (s: string) => string): { doc: T; texts: number } {
+  const out = structuredClone(doc);
+  let texts = 0;
+  const fix = (s: string) => (texts++, shape(breakThai(s)));
+  for (const node of Object.values(out.nodes)) {
+    visit(node.body, (s) => {
+      if (typeof s.text === "string") s.text = fix(s.text);
+    });
+  }
+  for (const c of Object.values(out.characters ?? {})) if (typeof c.name === "string") c.name = fix(c.name);
+  return { doc: out, texts };
+}

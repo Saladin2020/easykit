@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { TOOL_IDS, cliPath, loadKitConfig, mcpServerPath, resolveAll, type KitConfig, type ToolId } from "./tools.js";
+import { TOOLS, TOOL_IDS, cliPath, loadKitConfig, mcpServerPath, resolveAll, type KitConfig, type ToolId } from "./tools.js";
 
 export interface ToolReport {
   id: ToolId;
@@ -111,12 +111,14 @@ export function doctor(opts: { cfg?: KitConfig; configPath?: string | null; env?
     xvfb: opts.engines === false ? false : which("xvfb-run") !== null,
   };
   const ready = tools.filter((t) => t.installed && t.built && t.deps).length;
-  return { ok: ready === tools.length, config: loaded.path, tools, engines, summary: `${ready}/${tools.length} Easy tools ready` };
+  // The first twelve are required; the optional five only count against `ok` when installed but not built.
+  const blocking = tools.filter((t) => !(t.installed && t.built && t.deps) && (t.installed || !TOOLS[t.id].optional));
+  return { ok: blocking.length === 0, config: loaded.path, tools, engines, summary: `${ready}/${tools.length} Easy tools ready` };
 }
 
 export function formatDoctor(r: DoctorReport): string {
   const rows = r.tools.map((t) => {
-    const mark = t.installed && t.built && t.deps ? "ok " : t.installed ? "!! " : "-- ";
+    const mark = t.installed && t.built && t.deps ? "ok " : t.installed ? "!! " : TOOLS[t.id].optional ? "-  " : "-- ";
     const ver = t.version ? `v${t.version}` : "";
     const g = t.git ? `${t.git.commit}${t.git.dirty ? "*" : ""} ${t.git.branch}` : "";
     return `${mark} ${t.name.padEnd(14)} ${ver.padEnd(8)} ${g.padEnd(20)} ${t.home ?? "(missing)"}${t.problems.length ? `\n      ${t.problems.join("\n      ")}` : ""}`;

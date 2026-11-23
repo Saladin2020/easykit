@@ -2,13 +2,13 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { copyTree, exists, walk, writeJson } from "./fsutil.js";
-import { kitData, loadGameStrings, writeLocalizedDialogues, type DialogueBuild } from "./godot.js";
+import { featureData, features, kitData, loadGameStrings, loadShaper, writeLocalizedDialogues, type DialogueBuild } from "./godot.js";
 import { LOCALES } from "./localize.js";
 import type { Ctx } from "./pipeline.js";
 import { templateDir } from "./pipeline.js";
 import type { ToolId } from "./tools.js";
 
-export function pixiSources(c: Ctx): Array<{ tool: ToolId; dir: string; to: string }> {
+export function pixiSources(c: Ctx): Array<{ tool: ToolId; dir: string; to: string; optional?: boolean }> {
   const e = (tool: ToolId, rel: string, to: string = tool) => ({ tool, dir: path.join(c.ws(tool), "exports", rel), to });
   return [
     e("tilemap", `${c.tpl.tilemap.map}-pixi`),
@@ -21,6 +21,10 @@ export function pixiSources(c: Ctx): Array<{ tool: ToolId; dir: string; to: stri
     e("anim", "easyanim-pixi"),
     e("items", "easyitems-pixi"),
     e("save", "easysave-web"),
+    { ...e("portrait", "easyportrait-pixi"), optional: true },
+    { ...e("npc", "easynpc-pixi"), optional: true },
+    { ...e("font", "easyfont-pixi"), optional: true },
+    { ...e("battle", "easybattle-pixi"), optional: true },
   ];
 }
 
@@ -48,7 +52,10 @@ export async function assemblePixi(c: Ctx): Promise<PixiBuild> {
   await mkdir(dest, { recursive: true });
   // Each tool keeps its own folder so relative URLs inside the exports keep working.
   for (const s of pixiSources(c)) {
-    if (!(await exists(s.dir))) throw new Error(`missing web export ${s.dir}`);
+    if (!(await exists(s.dir))) {
+      if (s.optional) continue;
+      throw new Error(`missing web export ${s.dir}`);
+    }
     await copyTree(s.dir, path.join(dest, s.to), (rel) => rel === "index.html" || rel === "README.txt");
   }
   await copyTree(path.join(templateDir(c.tpl.id), "pixi"), dest);
@@ -61,9 +68,13 @@ export async function assemblePixi(c: Ctx): Promise<PixiBuild> {
   await mkdir(path.join(dest, "kit"), { recursive: true });
   await copyFile(path.join(c.assets, "scene", "title.png"), path.join(dest, "kit", "title.png"));
   const strings = await loadGameStrings(c);
-  const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings);
+  const feat = await features(c, "pixi");
+  const fontId = c.tpl.font?.dialogue;
+  const font = feat.font && fontId ? { shape: await loadShaper(c), assets: (doc: any) => void (doc.ui = { ...(doc.ui ?? {}), kitFont: fontId }) } : undefined;
+  const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings, font);
   await writeJson(path.join(dest, "kit", "kit.json"), {
     ...kitData(c, "pixi"),
+    ...featureData(c, feat),
     world: `tilemap/${c.tpl.tilemap.map}.tilemap.json`,
     questFile: `quest/${c.tpl.quest.id}.quests.json`,
     dialogueFiles: Object.fromEntries(LOCALES.map((l) => [l, `dialogue/${c.tpl.dialogue.id}.${l}.dialogue.json`])),
