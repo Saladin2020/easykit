@@ -19,9 +19,9 @@ afterAll(async () => {
 });
 
 describe("doctor", () => {
-  it("reports all 12 tools with versions when the suite is built", () => {
+  it("reports all 17 tools with versions when the suite is built", () => {
     const r = doctor({ cfg: { suiteDir: built }, env: {}, engines: false });
-    expect(r.tools).toHaveLength(12);
+    expect(r.tools).toHaveLength(17);
     expect(r.ok).toBe(true);
     for (const t of r.tools) {
       expect(t.installed).toBe(true);
@@ -41,7 +41,17 @@ describe("doctor", () => {
     expect(save.installed).toBe(true);
     expect(save.built).toBe(false);
     expect(save.problems.length).toBeGreaterThan(0);
-    expect(r.summary).toBe("0/12 Easy tools ready");
-    expect(r.tools.filter((t) => t.installed)).toHaveLength(10);
+    expect(r.summary).toBe("0/17 Easy tools ready");
+    expect(r.tools.filter((t) => t.installed)).toHaveLength(15);
+  });
+
+  it("stays ok when only the optional tools (Portrait, NPC, Font, Battle, Ship) are missing", async () => {
+    const c = await tempDir();
+    cleanups.push(c.cleanup);
+    await fakeSuite(c.dir, { built: true, skip: ["portrait", "npc", "font", "battle", "ship"] });
+    const r = doctor({ cfg: { suiteDir: c.dir }, env: {}, engines: false });
+    expect(r.ok).toBe(true);
+    expect(r.tools.filter((t) => !t.installed).map((t) => t.id).sort()).toEqual(["battle", "font", "npc", "portrait", "ship"]);
+    expect(r.summary).toBe("12/17 Easy tools ready");
   });
 });

@@ -1,8 +1,9 @@
-# Easy Kit × five new tools: integration plan (prepared, NOT applied)
+# Easy Kit × five new tools: integration (applied)
 
-Branch `plan/easy-suite-18` (local only, not pushed). Nothing here changes the pipeline yet; it is the plan for
-taking Easy Kit from 12 to 17 driven tools: Easy Battle, Easy Font, Easy NPC, Easy Portrait and Easy Ship.
-The five repos live in `/workspace/easy-new/<tool>`; each has its own `install-plan/` (studio wrapper, notes, plan).
+Status: **applied** on branch `plan/easy-suite-18` (merged to master). Easy Kit drives 17 tools: the 12 core ones plus
+Easy Portrait, NPC, Font and Battle (optional build steps) and Easy Ship (`easykit ship`, never uploads). Below is
+the original plan; "As built" at the end lists where the implementation differs.
+The five repos are github.com/Saladin2020/easy<tool>; each has its own `install-plan/` (studio wrapper, notes, plan).
 
 ## The five tools
 
@@ -66,3 +67,25 @@ Existing: Sprite 8787/8790/5173 · Scene –/8796/5174 · Dialogue 8798/8799/517
 Quest 8818/8819/5177 · SFX 8828/8829/5178 · UI 8838/8839/5179 · FX 8848/8849/5180 · Music 8858/8859/5181 ·
 Anim 8868/8869/5182 · Items 8878/8879/5185 · Save 8898/8899/5186 · Kit 8908/8909/5187.
 New: Battle 8938/8939/5193 · Font 8948/8949/5194 · NPC 8958/8959/5195 · Portrait 8968/8969/5196 · Ship 8978/8979/5197.
+
+## As built
+
+- The five tools are **optional** (`ToolSpec.optional`): `new` requires only the 12 core tools, skips a missing
+  optional tool with a "skipped: … not installed" note, and `doctor` stays ok without them.
+- Pipeline order: sprite → portrait → scene → tilemap → dialogue → npc → quest → font → ui → sfx → fx → music → anim →
+  items → battle → save; Easy Ship is not a build step but `easykit ship <project> [--build]` and the MCP
+  `ship_plan` (plan only).
+- Portraits: `from-sprite` on the generated sheets for ต้น / ป้าแดง / ลุงมี / ตาเพิ่ม (+ the sample monk) replace Easy
+  Dialogue's sample portraits; in game an EasyPortrait (Godot) / `lib.portrait` (Pixi) blinks and talks over the box.
+- NPC: five bark villagers follow their schedules (feet at `x*16+8, y*16+15`); quest NPCs stay put. Clock in the HUD,
+  night tint, `talk` raises friendship, state saved in Easy Save `items.npc`.
+- Font: dialogue text is word-broken (U+200B) and shaped at build time; the box uses the `.fnt` at its native size
+  (12 px, line 18). HUD labels ≤ 12 px use มะขาม 8 / 12; titles stay in Kanit.
+- Battle: zone = the paddy tiles (37–42 × 1–6), not the whole north-east corner (Uncle Mee's spot stays outside);
+  the first encounter is `plains_fields` seed 7; party ton + adam L3; `items.battle` in the save. No
+  `bind-overworld` call: the kit checks the zone itself.
+- Ship: configs `<name>` (Godot, targets from `--targets`, default web) and `<name>-web` (Pixi web); `EASYSHIP_GODOT`
+  is set from the kit's Godot. `easyship new --version` is swallowed by easyship's program-level `--version`, so the
+  kit writes the version into the config itself (`--release`).
+- Checks: Godot `test_game.gd` 73 checks, web `check-web.py` 34 checks, screenshots add `07_battle` / `08_night`.
+

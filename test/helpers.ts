@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { TOOL_IDS, TOOLS, cliPath, mcpServerPath, resolveTool } from "../src/lib/tools.js";
+import { CORE_TOOL_IDS, TOOL_IDS, TOOLS, cliPath, mcpServerPath, resolveTool } from "../src/lib/tools.js";
 
 export async function tempDir(prefix = "easykit-"): Promise<{ dir: string; cleanup: () => Promise<void> }> {
   const dir = await mkdtemp(path.join(os.tmpdir(), prefix));
@@ -26,10 +26,16 @@ export async function fakeSuite(dir: string, opts: { built?: boolean; skip?: str
   }
 }
 
-/** True when every sibling repo is present and built (local dev); CI has none, so integration tests skip. */
+/** True when every core sibling repo is present and built (local dev); CI has none, so integration tests skip. */
+/** Optional tools (portrait, npc, font, battle, ship) that are installed and built here. */
+export const OPTIONAL_SIBLINGS = TOOL_IDS.filter((id) => !(CORE_TOOL_IDS as readonly string[]).includes(id)).filter((id) => {
+  const r = resolveTool(id);
+  return !!r.home && existsSync(cliPath(r.home));
+});
+
 export const SIBLINGS = (() => {
   if (process.env.EASYKIT_SKIP_INTEGRATION === "1") return false;
-  return TOOL_IDS.every((id) => {
+  return CORE_TOOL_IDS.every((id) => {
     const r = resolveTool(id);
     return !!r.home && existsSync(cliPath(r.home)) && existsSync(mcpServerPath(r.home));
   });

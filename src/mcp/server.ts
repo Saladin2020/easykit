@@ -23,11 +23,12 @@ import { checkGodot, checkWeb } from "../lib/check.js";
 import { doctor } from "../lib/doctor.js";
 import { exists } from "../lib/fsutil.js";
 import { ENGINES, TEMPLATES, newProject, projectStatus, rebuildProject, type Engine } from "../lib/pipeline.js";
+import { shipProject } from "../lib/ship.js";
 import { ToolMcp, runCli } from "../lib/runner.js";
 import { KIT_PORTS, TOOLS, TOOL_IDS, isToolId, loadKitConfig, resolveAll, type ToolId } from "../lib/tools.js";
 import { checkRequest, resolveToken } from "../shared/requestGuard.js";
 
-export const KIT_TOOL_NAMES = ["new_project", "build_project", "check_project", "doctor", "status", "list_tools"] as const;
+export const KIT_TOOL_NAMES = ["new_project", "build_project", "check_project", "ship_plan", "doctor", "status", "list_tools"] as const;
 export const SEP = "__";
 
 const text = (data: unknown) => ({ content: [{ type: "text" as const, text: typeof data === "string" ? data : JSON.stringify(data, null, 2) }] });
@@ -38,7 +39,7 @@ const KIT_TOOLS: Tool[] = [
   {
     name: "new_project",
     title: "New game project",
-    description: `Scaffold a playable game by driving all 12 Easy tools (sprite → scene → tilemap → dialogue → quest → ui → sfx → fx → music → anim → items → save) and assembling a Godot 4.3+ project and/or a PixiJS web build. Template ${TEMPLATES.join(", ")}: walkable Thai + Malay-Muslim village, NPC dialogue, delivery quest, halal stall shop, intro cutscene, music, FX, save slots, th/en/ms. Takes ~30 s.`,
+    description: `Scaffold a playable game by driving the Easy tools (sprite → portrait → scene → tilemap → dialogue → npc → quest → font → ui → sfx → fx → music → anim → items → battle → save; Portrait, NPC, Font and Battle are optional and skipped when not installed) and assembling a Godot 4.3+ project and/or a PixiJS web build. Template ${TEMPLATES.join(", ")}: walkable Thai + Malay-Muslim village, NPC dialogue, delivery quest, halal stall shop, intro cutscene, music, FX, save slots, th/en/ms, plus animated dialogue portraits, villagers on daily schedules with a clock, the มะขาม Thai pixel font and paddy-field battles when those tools are installed. Takes ~50 s.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -64,6 +65,12 @@ const KIT_TOOLS: Tool[] = [
     description: "Godot import + headless gameplay test and the headless-Chrome web check for a project (skips engines that are not installed).",
     inputSchema: { type: "object", properties: { project: { type: "string" }, godot: { type: "boolean" }, web: { type: "boolean" } }, required: ["project"] },
   },
+  {
+    name: "ship_plan",
+    title: "Ship plan",
+    description: "Easy Ship: create release configs for a project's Godot and web builds (in <project>/.easy/ship) and return the plan — every step and command a build would run. Plan only: building is `easykit ship <project> --build` on the CLI and uploads to itch.io are never done by Easy Kit.",
+    inputSchema: { type: "object", properties: { project: { type: "string" }, targets: { type: "string", description: "Godot targets: web, windows, linux, android (comma-separated; default web)" } }, required: ["project"] },
+  },
   { name: "doctor", title: "Doctor", description: "Which Easy tools are installed (home, version, git commit, built, MCP server) and which engines exist for checks.", inputSchema: { type: "object", properties: {} } },
   {
     name: "status",
@@ -71,7 +78,7 @@ const KIT_TOOLS: Tool[] = [
     description: "Kit status: tool readiness, proxied tool servers that are running, and Easy Kit projects in a folder (or one project's manifest).",
     inputSchema: { type: "object", properties: { path: { type: "string", description: "Project or folder (default: the kit workspace)" } } },
   },
-  { name: "list_tools", title: "List Easy tools", description: "The 12 Easy tools with role, ports and the prefix their MCP tools use here.", inputSchema: { type: "object", properties: {} } },
+  { name: "list_tools", title: "List Easy tools", description: "The 17 Easy tools with role, ports and the prefix their MCP tools use here.", inputSchema: { type: "object", properties: {} } },
 ];
 
 export interface KitMcpOptions {
@@ -169,6 +176,10 @@ export function createKitMcp(opts: KitMcpOptions) {
           const root = safe(args.project);
           const runs = [...(args.godot === false ? [] : await checkGodot(root)), ...(args.web === false ? [] : [await checkWeb(root)])];
           return text({ ok: runs.every((r) => r.ok), runs });
+        }
+        case "ship_plan": {
+          const r = await shipProject(safe(args.project), { targets: args.targets, cfg });
+          return text(r);
         }
         case "doctor":
           return text(doctor({ cfg }));

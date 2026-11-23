@@ -4,18 +4,19 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { checkGodot, checkWeb, screenshotGodot, type CheckRun } from "./lib/check.js";
 import { doctor, formatDoctor } from "./lib/doctor.js";
+import { shipProject } from "./lib/ship.js";
 import { exists } from "./lib/fsutil.js";
 import { ENGINES, TEMPLATES, newProject, projectStatus, rebuildProject, type Engine } from "./lib/pipeline.js";
 import { KIT_PORTS, TOOLS, TOOL_IDS } from "./lib/tools.js";
 
 const program = new Command();
-program.name("easykit").description("Easy Kit — one CLI / MCP server / dashboard over the 12 Easy tools").version("0.1.0");
+program.name("easykit").description("Easy Kit — one CLI / MCP server / dashboard over the 17 Easy tools").version("0.1.0");
 
 const print = (json: boolean, data: unknown, text: () => string) => console.log(json ? JSON.stringify(data, null, 2) : text());
 
 program
   .command("new")
-  .description("Scaffold a playable game from a template, driving all 12 Easy tools")
+  .description("Scaffold a playable game from a template, driving the 12 core Easy tools plus Easy Portrait, NPC, Font and Battle when installed")
   .argument("<name>", "Project name (folder), e.g. VillageDemo")
   .option("--template <id>", `Template (${TEMPLATES.join(", ")})`, "village_delivery")
   .option("--engine <engine>", "godot | pixi | both", "both")
@@ -75,6 +76,28 @@ program
   });
 
 program
+  .command("ship")
+  .description("Easy Ship: release configs + plan for the project's Godot and web builds (--build to build and zip locally; never uploads)")
+  .argument("<project>")
+  .option("--build", "Build, check and zip into <project>/.easy/ship/releases/")
+  .option("--targets <list>", "Godot targets: web, windows, linux, android (the Pixi build is always web)", "web")
+  .option("--release <v>", "Release version for new ship configs (default 0.1.0)")
+  .option("--itch <user/game>", "itch.io page for later manual uploads (Easy Kit never uploads)")
+  .option("--json")
+  .action(async (project: string, o) => {
+    const r = await shipProject(path.resolve(project), { build: !!o.build, targets: o.targets, version: o.release, itch: o.itch });
+    print(!!o.json, r, () =>
+      [
+        `Easy Ship ${r.mode} · workspace ${r.workspace}`,
+        ...r.configs.map((c) => `  ${c.id.padEnd(16)} ${c.engine.padEnd(6)} ${c.targets.padEnd(20)} ${c.source}`),
+        ...r.runs.map((x) => `${x.ok ? "ok" : "!!"} ${x.command}\n${x.output.split("\n").slice(-12).join("\n").replace(/^/gm, "   ")}`),
+        "uploads: none (upload with `easyship ship <id> --upload --workspace <ws>` yourself when ready)",
+      ].join("\n"),
+    );
+    if (!r.ok) process.exitCode = 1;
+  });
+
+program
   .command("doctor")
   .description("Which Easy tools are installed, their versions, and the engines for checks")
   .option("--json")
@@ -102,7 +125,7 @@ program
 
 program
   .command("tools")
-  .description("The 12 Easy tools, their roles and ports")
+  .description("The 17 Easy tools, their roles and ports")
   .option("--json")
   .action((o) => {
     print(!!o.json, { tools: TOOL_IDS.map((id) => TOOLS[id]), kit: KIT_PORTS }, () =>

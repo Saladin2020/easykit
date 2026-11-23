@@ -19,22 +19,28 @@ const ok = (cond, label) => {
 };
 
 const tools = JSON.parse(run("tools", "--json").out);
-ok(tools.tools.length === 12 && tools.kit.serve === 8908, "tools --json lists 12 tools + kit ports");
+ok(tools.tools.length === 17 && tools.kit.serve === 8908, "tools --json lists 17 tools + kit ports");
 const doc = run("doctor", "--json");
 const report = JSON.parse(doc.out);
-ok(report.tools.length === 12 && typeof report.summary === "string", `doctor --json: ${report.summary}`);
+ok(report.tools.length === 17 && typeof report.summary === "string", `doctor --json: ${report.summary}`);
 ok((doc.code === 0) === report.ok, "doctor exit code matches readiness");
 ok(/Easy Kit doctor/.test(run("doctor").out), "doctor text report");
 ok(/no Easy Kit projects/.test(run("status", dir).out), "status on an empty folder");
 ok(run("new", "../bad", "--dir", dir).code !== 0, "new rejects a bad name");
 ok(run("new", "X", "--engine", "unity", "--dir", dir).code !== 0, "new rejects an unknown engine");
+ok(run("ship", dir).code !== 0, "ship rejects a folder that is not a project");
 
 if (report.ok) {
   const r = run("new", "SmokeDemo", "--dir", dir, "--seed", "5", "--engine", "pixi");
-  ok(r.code === 0 && existsSync(path.join(dir, "SmokeDemo", "web", "index.html")), "new SmokeDemo --engine pixi (all 12 tools)");
+  ok(r.code === 0 && existsSync(path.join(dir, "SmokeDemo", "web", "index.html")), "new SmokeDemo --engine pixi (all installed tools)");
   ok(/SmokeDemo/.test(run("status", dir).out), "status lists the new project");
   const b = run("build", path.join(dir, "SmokeDemo"), "--engine", "pixi");
   ok(b.code === 0, "build re-assembles the web build");
+  if (report.tools.find((t) => t.id === "ship")?.installed) {
+    const sp = run("ship", path.join(dir, "SmokeDemo"), "--json");
+    const sj = sp.code === 0 ? JSON.parse(sp.out) : null;
+    ok(sj?.ok && sj.mode === "plan" && sj.uploaded === false, "ship plans a release (no build, no upload)");
+  }
 } else {
   console.log("skip new/build: sibling Easy tools are not installed (see doctor)");
 }
