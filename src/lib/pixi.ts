@@ -2,7 +2,7 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { copyTree, exists, walk, writeJson } from "./fsutil.js";
-import { featureData, features, kitData, loadGameStrings, loadShaper, writeLocalizedDialogues, type DialogueBuild } from "./godot.js";
+import { featureData, features, fontMetrics, kitData, loadGameStrings, loadShaper, pixelFontLayout, writeLocalizedDialogues, type DialogueBuild } from "./godot.js";
 import { LOCALES } from "./localize.js";
 import type { Ctx } from "./pipeline.js";
 import { templateDir } from "./pipeline.js";
@@ -70,7 +70,8 @@ export async function assemblePixi(c: Ctx): Promise<PixiBuild> {
   const strings = await loadGameStrings(c);
   const feat = await features(c, "pixi");
   const fontId = c.tpl.font?.dialogue;
-  const font = feat.font && fontId ? { shape: await loadShaper(c), assets: (doc: any) => void (doc.ui = { ...(doc.ui ?? {}), kitFont: fontId }) } : undefined;
+  const metrics = feat.font && fontId ? await fontMetrics(c, fontId) : null;
+  const font = feat.font && fontId && metrics ? { shape: await loadShaper(c), assets: (doc: any) => pixelFontLayout(doc, fontId, metrics) } : undefined;
   const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings, font);
   await writeJson(path.join(dest, "kit", "kit.json"), {
     ...kitData(c, "pixi"),

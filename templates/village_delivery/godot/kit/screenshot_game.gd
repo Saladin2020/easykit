@@ -1,5 +1,6 @@
 extends SceneTree
-## Easy Kit screenshots: title, cutscene, gameplay, dialogue, shop (+ optional GIF frames).
+## Easy Kit screenshots: title, cutscene, gameplay, dialogue, shop, paddy battle + night village when the build has
+## Easy Battle / Easy NPC (+ optional GIF frames).
 ##   godot --path . --rendering-driver opengl3 --script res://kit/screenshot_game.gd -- --out /tmp/shots [--frames]
 
 var game
@@ -86,13 +87,37 @@ func _process(delta: float) -> bool:
 		5:
 			if t == 30:
 				shot("06_gameplay_ms")
+				game.set_language("th")
+				step = 7
+				t = 0
+		7:
+			var feat: Dictionary = game.kit.get("features", {})
+			if t == 1 and feat.get("battle", false):
+				var z: Array = game.kit["battle"]["zone"]
+				game.player.position = Vector2((float(z[0]) + 1.5) * 16.0, (float(z[1]) + 4.5) * 16.0)
+				game.camera.position = game.player.position
+				game.walk(Vector2.RIGHT, 0.2)
+			if t == 90 and game.mode == "battle":
+				shot("07_battle")
+			if t == 100 and game.battle_scene:
+				game.battle_scene.queue_free()
+				game._on_battle_end("win", {"coins": 0})
+			if t == 110 and feat.get("npc", false):
+				near("pa_daeng")
+				game.NPCS.set_time(0, 20.5 * 60.0)
+			if t == 140 and feat.get("npc", false):
+				shot("08_night")
+				game.NPCS.set_time(0, 9.0 * 60.0)
+			if t == 150:
 				if not frames:
 					return _done()
-				game.set_language("th")
-				near("pa_daeng")
-				game.player.position += Vector2(-60, 30)
-				step = 6
+				step = 8
 				t = 0
+		8:
+			near("pa_daeng")
+			game.player.position += Vector2(-60, 30)
+			step = 6
+			t = 0
 		6:
 			# ~6 s of walking for a GIF: left → up → right towards the market.
 			var dir := Vector2.ZERO

@@ -236,7 +236,13 @@ func _setup_ui() -> void:
 	for path in ["CoinText", "Quest/Title", "Quest/Text"]:
 		var hl := hud.get_node_or_null(path) as Label
 		if hl:
-			use_font(hl, 10)
+			use_font(hl, 8)
+	if has_font() and hud.get_node_or_null("Quest/Text"):
+		# the pixel font's Thai line is taller than Kanit 9: give the quest panel one more step of room
+		var qp := hud.get_node("Quest") as Control
+		qp.offset_bottom = qp.offset_top + 36.0
+		(hud.get_node("Quest/Title") as Control).position.y = 1.0
+		(hud.get_node("Quest/Text") as Control).position.y = 17.0
 	clock_label = _label(10)
 	clock_label.position = Vector2(8, 6)
 	clock_label.size = Vector2(160, 16)

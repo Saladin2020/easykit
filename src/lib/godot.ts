@@ -58,6 +58,23 @@ export async function loadShaper(c: Ctx): Promise<(s: string) => string> {
   return mod.shapeThai;
 }
 
+/** Native size + line height of an Easy Font bitmap font (bitmap fonts must render at their own size). */
+export async function fontMetrics(c: Ctx, id: string): Promise<{ size: number; line: number }> {
+  const j = JSON.parse(await readFile(path.join(c.ws("font"), "exports", "easyfont-godot", "easyfont", "fonts.json"), "utf8")) as { fonts: Array<{ id: string; size: number; line: number }> };
+  const f = j.fonts.find((x) => x.id === id);
+  if (!f) throw new Error(`Easy Font has no font ${id}`);
+  return { size: f.size, line: f.line };
+}
+
+/** Dialogue-box layout for a pixel font: text, name plate and choices at the font's native size and line height. */
+export function pixelFontLayout(doc: any, id: string, m: { size: number; line: number }): void {
+  const L = doc.ui?.layout;
+  if (L?.text) Object.assign(L.text, { fontSize: m.size, lineHeight: Math.max(m.line, L.text.lineHeight ?? 0) });
+  if (L?.plate) Object.assign(L.plate, { fontSize: m.size, h: Math.max(L.plate.h ?? 0, m.line + 2) });
+  if (L?.choices) Object.assign(L.choices, { fontSize: m.size, rowH: Math.max(L.choices.rowH ?? 0, m.line) });
+  doc.ui = { ...(doc.ui ?? {}), kitFont: id };
+}
+
 /** kit.json blocks for the optional tools (null when the tool is not part of this build). */
 export function featureData(c: Ctx, f: Features) {
   return {
@@ -241,7 +258,10 @@ export async function assembleGodot(c: Ctx): Promise<GodotBuild> {
   const feat = await features(c, "godot");
   const fontId = c.tpl.font?.dialogue;
   const font = feat.font && fontId
-    ? { shape: await loadShaper(c), assets: (doc: any) => { doc.assets = { ...(doc.assets ?? {}), fontFiles: { body: `res://easyfont/${fontId}.fnt`, name: `res://easyfont/${fontId}.fnt` } }; doc.ui = { ...(doc.ui ?? {}), kitFont: fontId }; } }
+    ? await (async () => {
+        const m = await fontMetrics(c, fontId);
+        return { shape: await loadShaper(c), assets: (doc: any) => { doc.assets = { ...(doc.assets ?? {}), fontFiles: { body: `res://easyfont/${fontId}.fnt`, name: `res://easyfont/${fontId}.fnt` } }; pixelFontLayout(doc, fontId, m); } };
+      })()
     : undefined;
   const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings, font);
   await writeJson(path.join(dest, "kit", "kit.json"), {
