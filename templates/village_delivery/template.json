@@ -1,49 +1,282 @@
 {
   "id": "village_delivery",
-  "name": { "th": "ต้นส่งของรอบหมู่บ้าน", "en": "Ton's village deliveries", "ms": "Penghantaran Ton di kampung" },
-  "summary": "Top-down Thai + Malay-Muslim village: walk around, help Auntie Daeng deliver three orders (temple, farm, Grandpa Phoem), buy snacks at Bang Roti's halal stall, save anywhere, play in Thai / English / Malay.",
-  "viewport": { "width": 480, "height": 270 },
-  "palette": ["#3a7bd5", "#d9534f", "#2e9e6a", "#e0a526", "#8e5bc4", "#e07b39", "#2aa8b8", "#c2477a"],
+  "name": {
+    "th": "ต้นส่งของรอบหมู่บ้าน",
+    "en": "Ton's village deliveries",
+    "ms": "Penghantaran Ton di kampung"
+  },
+  "summary": "Top-down Thai + Malay-Muslim village: walk around, help Auntie Daeng deliver three orders (temple, farm, Grandpa Phoem), buy snacks at Bang Roti's halal stall, save anywhere, play in Thai / English / Malay; villagers keep daily schedules, a paddy-field battle, animated dialogue portraits and the มะขาม pixel font.",
+  "viewport": {
+    "width": 480,
+    "height": 270
+  },
+  "palette": [
+    "#3a7bd5",
+    "#d9534f",
+    "#2e9e6a",
+    "#e0a526",
+    "#8e5bc4",
+    "#e07b39",
+    "#2aa8b8",
+    "#c2477a"
+  ],
   "sprite": {
     "player": "ton",
     "cast": [
-      { "id": "ton", "base": "little_boy", "recolor": "shirt", "map": "ton" },
-      { "id": "pa_daeng", "base": "market_seller", "map": "pa_daeng" },
-      { "id": "bang_roti", "base": "roti_seller", "map": "bang_roti" },
-      { "id": "kak_fatimah", "base": "hijab_teacher", "map": "kak_fatimah" },
-      { "id": "adam", "base": "kopiah_boy", "map": "adam" },
-      { "id": "pak_cik_ismail", "base": "pak_cik_jubah", "map": "pak_cik_ismail" },
-      { "id": "ta_poem", "base": "grandpa", "map": "ta_poem" },
-      { "id": "lung_mee", "base": "village_farmer", "map": "lung_mee", "at": [38, 7.5], "facing": "front" }
+      {
+        "id": "ton",
+        "base": "little_boy",
+        "recolor": "shirt",
+        "map": "ton"
+      },
+      {
+        "id": "pa_daeng",
+        "base": "market_seller",
+        "map": "pa_daeng"
+      },
+      {
+        "id": "bang_roti",
+        "base": "roti_seller",
+        "map": "bang_roti"
+      },
+      {
+        "id": "kak_fatimah",
+        "base": "hijab_teacher",
+        "map": "kak_fatimah"
+      },
+      {
+        "id": "adam",
+        "base": "kopiah_boy",
+        "map": "adam"
+      },
+      {
+        "id": "pak_cik_ismail",
+        "base": "pak_cik_jubah",
+        "map": "pak_cik_ismail"
+      },
+      {
+        "id": "ta_poem",
+        "base": "grandpa",
+        "map": "ta_poem"
+      },
+      {
+        "id": "lung_mee",
+        "base": "village_farmer",
+        "map": "lung_mee",
+        "at": [
+          38,
+          7.5
+        ],
+        "facing": "front"
+      }
     ],
     "side": [
-      { "id": "side_little_boy", "base": "side_little_boy", "recolor": "shirt" },
-      { "id": "side_market_seller", "base": "side_market_seller" },
-      { "id": "side_hijab_teacher", "base": "side_hijab_teacher" },
-      { "id": "side_grandma", "base": "side_grandma" }
+      {
+        "id": "side_little_boy",
+        "base": "side_little_boy",
+        "recolor": "shirt"
+      },
+      {
+        "id": "side_market_seller",
+        "base": "side_market_seller"
+      },
+      {
+        "id": "side_hijab_teacher",
+        "base": "side_hijab_teacher"
+      },
+      {
+        "id": "side_grandma",
+        "base": "side_grandma"
+      }
     ]
   },
-  "scene": { "id": "harmony_town", "cameraRange": [380, 900], "actor": "side_little_boy" },
-  "tilemap": { "map": "multicultural_village" },
-  "dialogue": { "id": "village_delivery", "style": "teak", "segments": ["market", "refuse", "temple", "farm", "elder", "ending"] },
-  "quest": { "id": "village_delivery", "main": "village_delivery" },
-  "ui": { "doc": "village", "theme": "teak" },
-  "sfx": { "bank": "village", "seeded": [{ "id": "coin", "preset": "coin" }] },
-  "fx": { "seeded": [{ "id": "coin_burst", "from": "coin_burst" }], "export": ["coin_burst", "level_up", "sparkle_shine", "confetti", "footstep_dust", "heal_plus", "fireflies", "lantern_glow"] },
-  "music": { "seeded": [{ "id": "village_day", "from": "village_day" }], "export": ["village_day", "shop_theme"], "world": "village_day", "shop": "shop_theme" },
-  "anim": { "cutscene": "village_morning_delivery" },
-  "items": { "shop": "raya_bazaar" },
-  "save": { "schema": "village_delivery" },
+  "portrait": {
+    "sets": [
+      {
+        "id": "town_kid",
+        "from": "ton",
+        "th": "ต้น",
+        "en": "Ton",
+        "ms": "Ton"
+      },
+      {
+        "id": "town_vendor",
+        "from": "pa_daeng",
+        "th": "ป้าแดง",
+        "en": "Auntie Daeng",
+        "ms": "Mak Cik Daeng"
+      },
+      {
+        "id": "town_farmer",
+        "from": "lung_mee",
+        "th": "ลุงมี",
+        "en": "Uncle Mee",
+        "ms": "Pak Cik Mee"
+      },
+      {
+        "id": "town_elder",
+        "from": "ta_poem",
+        "th": "ตาเพิ่ม",
+        "en": "Grandpa Poem",
+        "ms": "Tok Poem"
+      }
+    ],
+    "keep": [
+      "town_monk"
+    ]
+  },
+  "scene": {
+    "id": "harmony_town",
+    "cameraRange": [
+      380,
+      900
+    ],
+    "actor": "side_little_boy"
+  },
+  "tilemap": {
+    "map": "multicultural_village"
+  },
+  "dialogue": {
+    "id": "village_delivery",
+    "style": "teak",
+    "segments": [
+      "market",
+      "refuse",
+      "temple",
+      "farm",
+      "elder",
+      "ending"
+    ]
+  },
+  "npc": {
+    "map": {
+      "kak_fatimah": "fatimah",
+      "adam": "adam",
+      "pak_cik_ismail": "pakcik",
+      "aisyah": "aisyah",
+      "pak_hamid": "hamid"
+    },
+    "start": "07:00",
+    "secondsPerMinute": 0.5
+  },
+  "quest": {
+    "id": "village_delivery",
+    "main": "village_delivery"
+  },
+  "font": {
+    "hud": "makham-12",
+    "small": "makham-8",
+    "dialogue": "makham-12"
+  },
+  "ui": {
+    "doc": "village",
+    "theme": "teak"
+  },
+  "sfx": {
+    "bank": "village",
+    "seeded": [
+      {
+        "id": "coin",
+        "preset": "coin"
+      }
+    ]
+  },
+  "fx": {
+    "seeded": [
+      {
+        "id": "coin_burst",
+        "from": "coin_burst"
+      }
+    ],
+    "export": [
+      "coin_burst",
+      "level_up",
+      "sparkle_shine",
+      "confetti",
+      "footstep_dust",
+      "heal_plus",
+      "fireflies",
+      "lantern_glow"
+    ]
+  },
+  "music": {
+    "seeded": [
+      {
+        "id": "village_day",
+        "from": "village_day"
+      }
+    ],
+    "export": [
+      "village_day",
+      "shop_theme"
+    ],
+    "world": "village_day",
+    "shop": "shop_theme"
+  },
+  "anim": {
+    "cutscene": "village_morning_delivery"
+  },
+  "items": {
+    "shop": "raya_bazaar"
+  },
+  "battle": {
+    "table": "plains_fields",
+    "zone": [37, 1, 43, 7],
+    "culture": "thai",
+    "ground": "C",
+    "party": [
+      {
+        "id": "ton",
+        "level": 3
+      },
+      {
+        "id": "adam",
+        "level": 3
+      }
+    ],
+    "heroSheets": {
+      "ton": "side_little_boy"
+    },
+    "firstSeed": 7
+  },
+  "save": {
+    "schema": "village_delivery"
+  },
   "npcs": {
-    "pa_daeng": { "speaker": "vendor", "role": "quest" },
-    "luang_phi": { "speaker": "monk", "role": "quest" },
-    "lung_mee": { "speaker": "farmer", "role": "quest" },
-    "ta_poem": { "speaker": "elder", "role": "quest" },
-    "bang_roti": { "role": "shop", "shop": "raya_bazaar" },
-    "kak_fatimah": { "role": "bark" },
-    "adam": { "role": "bark" },
-    "pak_cik_ismail": { "role": "bark" },
-    "aisyah": { "role": "bark" },
-    "pak_hamid": { "role": "bark" }
+    "pa_daeng": {
+      "speaker": "vendor",
+      "role": "quest"
+    },
+    "luang_phi": {
+      "speaker": "monk",
+      "role": "quest"
+    },
+    "lung_mee": {
+      "speaker": "farmer",
+      "role": "quest"
+    },
+    "ta_poem": {
+      "speaker": "elder",
+      "role": "quest"
+    },
+    "bang_roti": {
+      "role": "shop",
+      "shop": "raya_bazaar"
+    },
+    "kak_fatimah": {
+      "role": "bark"
+    },
+    "adam": {
+      "role": "bark"
+    },
+    "pak_cik_ismail": {
+      "role": "bark"
+    },
+    "aisyah": {
+      "role": "bark"
+    },
+    "pak_hamid": {
+      "role": "bark"
+    }
   }
 }

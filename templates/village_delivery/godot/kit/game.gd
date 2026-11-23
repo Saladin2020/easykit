@@ -4,6 +4,8 @@ extends Node2D
 ##   Easy Tilemap world + Easy Sprite cast · Easy Dialogue box · Easy Quest manager · Easy Items shop
 ##   Easy Anim intro cutscene · Easy Music / Easy SFX / Easy FX · Easy Save slots + I18n (th / en / ms)
 ##   Easy UI HUD + theme · Easy Scene title backdrop.
+## Optional (when kit.json lists them): Easy Portrait animated dialogue portraits · Easy NPC daily schedules + clock ·
+##   Easy Font มะขาม pixel text · Easy Battle paddy-field encounters.
 ## Keys: arrows / WASD walk · E / Enter talk · L language · F5 save · F9 load · Esc skip / close.
 
 signal mode_changed(mode: String)
@@ -44,13 +46,36 @@ var cutscene_layer: CanvasLayer
 var cutscene: Node
 var events: Array = []              # log for tests: ["dialogue:market", "shop:open", …]
 
+# optional tools (Easy Portrait / NPC / Font / Battle)
+var feat: Dictionary = {}
+var clock_label: Label
+var night_tint: CanvasModulate
+var scheduled: Dictionary = {}      # kit map name -> Easy NPC id
+var talker: Control                 # EasyPortrait over the dialogue box portrait
+var battle_layer: CanvasLayer
+var battle_scene: Node
+var battles := 0
+var _last_tile := Vector2i(-999, -999)
+# optional autoloads, looked up at runtime so the game still parses without them
+var NPCS: Node
+var BATTLE: Node
+var EFONT: Node
+var PORTRAITS: Node
+
 
 func _ready() -> void:
 	kit = JSON.parse_string(FileAccess.get_file_as_string(KIT_JSON))
 	theme_res = load(kit["theme"]) if ResourceLoader.exists(kit["theme"]) else null
 	I18n.set_locale(str(kit.get("defaultLocale", "th")))
+	feat = kit.get("features", {})
+	NPCS = get_node_or_null("/root/NPCs")
+	BATTLE = get_node_or_null("/root/Battle")
+	EFONT = get_node_or_null("/root/EasyFont")
+	PORTRAITS = get_node_or_null("/root/Portraits")
 	_setup_world()
 	_setup_ui()
+	_setup_npcs()
+	_setup_battle()
 	_setup_quest()
 	Items.reset()
 	Items.coins_changed.connect(func(_c): _refresh_hud())
@@ -110,11 +135,35 @@ func npc_name(id: String) -> String:
 	return I18n.t("kit.npc.%s.name" % id)
 
 
+# ------------------------------------------------------------------ Easy Font (มะขาม pixel text)
+
+func has_font() -> bool:
+	return bool(feat.get("font", false)) and EFONT != null
+
+
+## Pixel font for HUD-sized labels (big titles keep Kanit).
+func use_font(l: Control, size := 10) -> void:
+	if not has_font() or size > 12:
+		return
+	var id: String = str(kit["font"]["small"] if size <= 8 else kit["font"]["hud"])
+	var f = EFONT.font(id)
+	if f == null:
+		return
+	l.add_theme_font_override("font", f)
+	l.add_theme_font_size_override("font_size", EFONT.size_of(id))
+	l.set_meta("easyfont", true)
+
+
+## Set label text (shaped for the pixel font when the label uses it).
+func set_text(l: Label, text: String) -> void:
+	l.text = EFONT.shape(text) if l.has_meta("easyfont") else text
+
+
 func _nearest_npc() -> String:
 	var best := ""
 	var best_d := TALK_RANGE
 	for n in npcs:
-		if not kit["npcs"].has(n):
+		if not kit["npcs"].has(n) or not (npcs[n] as Node2D).visible:
 			continue
 		var d: float = (npcs[n] as Node2D).position.distance_to(player.position)
 		if d < best_d:
@@ -154,6 +203,8 @@ func walk(dir: Vector2, delta: float) -> void:
 	if n != near:
 		near = n
 		_refresh_prompt()
+	if dir != Vector2.ZERO:
+		_check_encounter()
 
 
 # ------------------------------------------------------------------ UI
@@ -163,6 +214,7 @@ func _label(size: int) -> Label:
 	if theme_res:
 		l.theme = theme_res
 	l.add_theme_font_size_override("font_size", size)
+	use_font(l, size)
 	l.add_theme_color_override("font_outline_color", Color("#1a120c"))
 	l.add_theme_constant_override("outline_size", 3)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -181,6 +233,21 @@ func _setup_ui() -> void:
 		if c:
 			c.visible = false
 	ui.add_child(hud)
+	for path in ["CoinText", "Quest/Title", "Quest/Text"]:
+		var hl := hud.get_node_or_null(path) as Label
+		if hl:
+			use_font(hl, 8)
+	if has_font() and hud.get_node_or_null("Quest/Text"):
+		# the pixel font's Thai line is taller than Kanit 9: give the quest panel one more step of room
+		var qp := hud.get_node("Quest") as Control
+		qp.offset_bottom = qp.offset_top + 36.0
+		(hud.get_node("Quest/Title") as Control).position.y = 1.0
+		(hud.get_node("Quest/Text") as Control).position.y = 17.0
+	clock_label = _label(10)
+	clock_label.position = Vector2(8, 6)
+	clock_label.size = Vector2(160, 16)
+	clock_label.visible = bool(feat.get("npc", false))
+	ui.add_child(clock_label)
 	prompt = _label(10)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.position = Vector2(0, 200)
@@ -207,7 +274,7 @@ func kit_width() -> float:
 
 
 func show_toast(text: String, secs := 2.2) -> void:
-	toast.text = text
+	set_text(toast, text)
 	_toast_left = secs
 
 
@@ -216,6 +283,7 @@ func _process(delta: float) -> void:
 		_toast_left -= delta
 		if _toast_left <= 0.0:
 			toast.text = ""
+	_tick_npcs()
 
 
 func _refresh_prompt() -> void:
@@ -223,7 +291,7 @@ func _refresh_prompt() -> void:
 		prompt.text = ""
 		return
 	var role: String = kit["npcs"][near].get("role", "bark")
-	prompt.text = I18n.t("kit.prompt.shop" if role == "shop" else "kit.prompt.talk", {"name": npc_name(near)})
+	set_text(prompt, I18n.t("kit.prompt.shop" if role == "shop" else "kit.prompt.talk", {"name": npc_name(near)}))
 
 
 func quest_lines() -> PackedStringArray:
@@ -241,15 +309,15 @@ func quest_lines() -> PackedStringArray:
 func _refresh_hud() -> void:
 	var coin := hud.get_node_or_null("CoinText") as Label
 	if coin:
-		coin.text = I18n.t("kit.coins", {"n": Items.state.get("coins", 0)})
+		set_text(coin, I18n.t("kit.coins", {"n": Items.state.get("coins", 0)}))
 	_max_money = maxi(_max_money, int(Items.state.get("coins", 0)))
 	var lines := quest_lines()
 	var title := hud.get_node_or_null("Quest/Title") as Label
 	var text := hud.get_node_or_null("Quest/Text") as Label
 	if title:
-		title.text = lines[0]
+		set_text(title, lines[0])
 	if text:
-		text.text = lines[1]
+		set_text(text, lines[1])
 
 
 func _refresh_texts() -> void:
@@ -291,10 +359,10 @@ func _fill_title() -> void:
 		return
 	var loc := I18n.get_locale()
 	(title_layer.get_node("Title") as Label).text = str(kit["title"].get(loc, kit["title"]["th"]))
-	(title_layer.get_node("Press") as Label).text = I18n.t("kit.title.press")
-	(title_layer.get_node("Keys") as Label).text = I18n.t("kit.title.keys")
-	(title_layer.get_node("Lang") as Label).text = I18n.t("kit.title.lang", {"lang": I18n.t("lang." + loc)})
-	(title_layer.get_node("Continue") as Label).text = I18n.t("kit.title.continue") if FileAccess.file_exists(SaveManager.path_of(SAVE_SLOT)) else ""
+	set_text(title_layer.get_node("Press") as Label, I18n.t("kit.title.press"))
+	set_text(title_layer.get_node("Keys") as Label, I18n.t("kit.title.keys"))
+	set_text(title_layer.get_node("Lang") as Label, I18n.t("kit.title.lang", {"lang": I18n.t("lang." + loc)}))
+	set_text(title_layer.get_node("Continue") as Label, I18n.t("kit.title.continue") if FileAccess.file_exists(SaveManager.path_of(SAVE_SLOT)) else "")
 
 
 func start_game(play_intro := true) -> void:
@@ -333,7 +401,7 @@ func play_cutscene() -> void:
 	var loc := I18n.get_locale()
 	cutscene.data["lang"] = "th" if loc == "th" else "en"
 	var skip := _label(8)
-	skip.text = I18n.t("kit.skip")
+	set_text(skip, I18n.t("kit.skip"))
 	skip.position = Vector2(kit_width() - 110, 256)
 	skip.size = Vector2(104, 12)
 	skip.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -363,6 +431,10 @@ func _enter_play() -> void:
 func _set_mode(m: String) -> void:
 	mode = m
 	mode_changed.emit(m)
+	if feat.get("npc", false):
+		NPCS.running = m == "play"
+	if talker and m != "dialogue":
+		talker.visible = false
 	if prompt:
 		_refresh_prompt()
 
@@ -482,6 +554,7 @@ func start_segment(seg: String) -> void:
 
 
 func _on_line(ev: Dictionary) -> void:
+	call_deferred("_talk_portrait", ev)
 	var voice := str({"kid": "blip_kid", "vendor": "blip_auntie", "monk": "blip_monk", "elder": "blip_elder"}.get(str(ev.get("speaker", "")), "blip_mid"))
 	_sfx(voice, -10.0)
 
@@ -505,6 +578,12 @@ func _on_dialogue_finished(vars: Dictionary) -> void:
 func bark(npc: String) -> void:
 	events.append("bark:" + npc)
 	var text := I18n.t("kit.npc.%s.bark" % npc)
+	if scheduled.has(npc):
+		var nid: String = scheduled[npc]
+		NPCS.talk(nid)
+		var st = NPCS.state(nid)
+		if st != null:
+			text += "\n(" + NPCS.activity_name(str(st["activity"])) + ")"
 	var speaker := str(kit["npcs"][npc].get("speaker", ""))
 	if speaker == "vendor" and QuestManager.status(kit["quest"]["main"]) == "active":
 		var q: String = kit["quest"]["main"]
@@ -515,8 +594,11 @@ func bark(npc: String) -> void:
 	if theme_res:
 		panel.theme = theme_res
 	var l := _label(8)
-	l.text = text
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if l.has_meta("easyfont"):
+		l.text = EFONT.wrap(text, str(kit["font"]["small"]), 150)
+	else:
+		l.text = text
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(150, 0)
 	panel.add_child(l)
 	panel.z_index = 100
@@ -614,6 +696,10 @@ func close_shop() -> void:
 
 func set_language(loc: String) -> void:
 	I18n.set_locale(loc)
+	if feat.get("npc", false):
+		NPCS.lang = loc
+	if feat.get("battle", false):
+		BATTLE.lang = loc
 	if mode != "dialogue":
 		_load_dialogue()
 	if is_instance_valid(shop):
@@ -668,10 +754,10 @@ func build_save() -> Dictionary:
 	var face := {"front": "down", "back": "up", "left": "left", "right": "right"}
 	return {
 		"player": {"name": I18n.t("dlg.%s.char.kid" % kit["dialogue"]["id"]).left(16), "money": int(Items.state.get("coins", 0)), "scene": _spawn_near(), "pos": {"x": player.position.x, "y": player.position.y}, "facing": face.get(facing, "down"), "bike": "none"},
-		"day": 1,
-		"time_of_day": "morning",
+		"day": (int(NPCS.day) + 1) if feat.get("npc", false) else 1,
+		"time_of_day": time_of_day(),
 		"quests": {"active": active, "done": done, "steps": steps, "vars": vars},
-		"items": {"inventory": Items.to_dict(), "quest_items": qs["items"], "seen": qs["seen"], "status": status},
+		"items": {"inventory": Items.to_dict(), "quest_items": qs["items"], "seen": qs["seen"], "status": status, "npc": NPCS.to_dict() if feat.get("npc", false) else {}, "battle": BATTLE.to_dict() if feat.get("battle", false) else {}},
 		"flags": flags.duplicate(),
 		"deliveries": deliveries,
 		"settings": {"locale": I18n.get_locale()},
@@ -719,6 +805,10 @@ func apply_save(d: Dictionary) -> void:
 	last_quest_coins = int(QuestManager.vars.get("coins", 0))
 	if it.has("inventory"):
 		Items.from_dict(it["inventory"])
+	if feat.get("npc", false) and typeof(it.get("npc")) == TYPE_DICTIONARY and not it["npc"].is_empty():
+		NPCS.from_dict(it["npc"])
+	if feat.get("battle", false) and typeof(it.get("battle")) == TYPE_DICTIONARY and not it["battle"].is_empty():
+		BATTLE.from_dict(it["battle"])
 	flags = d.get("flags", {}).duplicate()
 	var p: Dictionary = d.get("player", {})
 	var pos: Dictionary = p.get("pos", {})
@@ -771,3 +861,166 @@ func _unhandled_input(event: InputEvent) -> void:
 		"shop":
 			if k == KEY_ESCAPE:
 				close_shop()
+		"battle":
+			return
+
+
+# ------------------------------------------------------------------ Easy NPC: villagers on their daily schedule
+
+func _setup_npcs() -> void:
+	if not feat.get("npc", false) or NPCS == null:
+		feat["npc"] = false
+		return
+	var spec: Dictionary = kit.get("npcSchedule", {})
+	NPCS.lang = I18n.get_locale()
+	var start := str(spec.get("start", "07:00")).split(":")
+	NPCS.set_time(0, float(int(start[0]) * 60 + int(start[1])))
+	var spm := float(NPCS.world.get("clock", {}).get("secondsPerMinute", 1.0))
+	NPCS.time_scale = spm / maxf(0.01, float(spec.get("secondsPerMinute", spm)))
+	NPCS.running = false
+	for map_name in spec.get("map", {}):
+		if not npcs.has(map_name) or NPCS.npc(str(spec["map"][map_name])) == null:
+			continue
+		var s: AnimatedSprite2D = npcs[map_name]
+		s.set_script(null)
+		for ch in s.get_children():
+			if ch is StaticBody2D:
+				ch.queue_free()
+		scheduled[map_name] = str(spec["map"][map_name])
+	night_tint = CanvasModulate.new()
+	world.add_child(night_tint)
+	_tick_npcs()
+
+
+func time_of_day() -> String:
+	if not feat.get("npc", false):
+		return "morning"
+	if NPCS.is_night():
+		return "night"
+	var m := float(NPCS.minute)
+	return "morning" if m < 660.0 else ("noon" if m < 960.0 else "evening")
+
+
+## Place the scheduled villagers (Easy NPC state in tiles → map pixels, feet anchored like Easy Tilemap).
+func _tick_npcs() -> void:
+	if not feat.get("npc", false):
+		return
+	for map_name in scheduled:
+		var st = NPCS.state(scheduled[map_name])
+		if st == null:
+			continue
+		var s: AnimatedSprite2D = npcs[map_name]
+		s.position = Vector2(roundf(float(st["x"]) * 16.0 + 8.0), roundf(float(st["y"]) * 16.0 + 15.0))
+		s.visible = not bool(st["indoors"])
+		var anim := ("walk_" if bool(st["moving"]) else "idle_") + str(st["facing"])
+		if s.sprite_frames and s.sprite_frames.has_animation(anim) and s.animation != anim:
+			s.play(anim)
+	var days := {"th": {"mon": "จันทร์", "tue": "อังคาร", "wed": "พุธ", "thu": "พฤหัสฯ", "fri": "ศุกร์", "sat": "เสาร์", "sun": "อาทิตย์"}, "ms": {"mon": "Isnin", "tue": "Selasa", "wed": "Rabu", "thu": "Khamis", "fri": "Jumaat", "sat": "Sabtu", "sun": "Ahad"}}
+	var wd := str(NPCS.weekday())
+	var dname: String = days.get(I18n.get_locale(), {}).get(wd, wd.capitalize())
+	if clock_label:
+		set_text(clock_label, "%s %s%s" % [dname, NPCS.time_text(), " ☾" if NPCS.is_night() and not clock_label.has_meta("easyfont") else ""])
+	if night_tint:
+		night_tint.color = Color(0.55, 0.6, 0.85) if NPCS.is_night() else Color.WHITE
+
+
+# ------------------------------------------------------------------ Easy Portrait: blink + talk over the dialogue box
+
+func _talk_portrait(ev: Dictionary) -> void:
+	if not feat.get("portrait", false) or PORTRAITS == null:
+		return
+	var base := box.get_node_or_null("Portrait") as TextureRect
+	var pid := str(ev.get("portrait", "")) if ev.get("portrait") != null else ""
+	if base == null or pid == "" or not PORTRAITS.has(pid):
+		if talker:
+			talker.visible = false
+		return
+	if talker == null:
+		talker = (load("res://easyportrait/easy_portrait.gd") as GDScript).new()
+		talker.name = "KitTalker"
+		box.add_child(talker)
+	talker.set("character", pid)
+	talker.set("emotion", str(ev.get("emotion", "neutral")) if ev.get("emotion") != null else "neutral")
+	talker.position = base.position
+	talker.size = base.size
+	talker.visible = base.visible
+	base.self_modulate.a = 0.0 if talker.visible else 1.0
+	talker.call("say", clampf(float(str(ev.get("text", "")).length()) / 40.0, 0.4, 4.0))
+	events.append("portrait:%s" % pid)
+
+
+# ------------------------------------------------------------------ Easy Battle: paddy-field encounters
+
+func _setup_battle() -> void:
+	if not feat.get("battle", false) or BATTLE == null:
+		feat["battle"] = false
+		return
+	var spec: Dictionary = kit["battle"]
+	var ids: Array = []
+	var lvl := 1
+	for p in spec.get("party", []):
+		ids.append(str(p["id"]))
+		lvl = maxi(lvl, int(p.get("level", 1)))
+	BATTLE.reset_party(ids, lvl)
+	BATTLE.lang = I18n.get_locale()
+	BATTLE.connect("battle_ended", _on_battle_end)
+	battle_layer = CanvasLayer.new()
+	battle_layer.layer = 9
+	add_child(battle_layer)
+
+
+func in_battle_zone(pos: Vector2) -> bool:
+	if not feat.get("battle", false):
+		return false
+	var z: Array = kit["battle"]["zone"]
+	var t := Vector2i(floori(pos.x / 16.0), floori(pos.y / 16.0))
+	return t.x >= int(z[0]) and t.y >= int(z[1]) and t.x < int(z[2]) and t.y < int(z[3])
+
+
+func _check_encounter() -> void:
+	if mode != "play" or not in_battle_zone(player.position):
+		return
+	var t := Vector2i(floori(player.position.x / 16.0), floori(player.position.y / 16.0))
+	if t == _last_tile:
+		return
+	_last_tile = t
+	var spec: Dictionary = kit["battle"]
+	var setup: Dictionary
+	if not flags.get("battle_first", false):
+		setup = BATTLE.scripted(str(spec["table"]), int(spec.get("firstSeed", 7)))
+	else:
+		setup = BATTLE.step("", str(spec.get("culture", "")), str(spec.get("ground", "C")))
+	if not setup.is_empty():
+		start_battle(setup)
+
+
+func start_battle(setup: Dictionary, opts := {}) -> Node:
+	flags["battle_first"] = true
+	battles += 1
+	events.append("battle:" + str(setup.get("table", "")))
+	_set_mode("battle")
+	prompt.text = ""
+	var o := {"lang": I18n.get_locale()}
+	o.merge(opts, true)
+	battle_scene = BATTLE.start(setup, battle_layer, o)
+	return battle_scene
+
+
+func _on_battle_end(result: String, rewards: Dictionary) -> void:
+	events.append("battle_end:" + result)
+	battle_scene = null
+	var c := int(rewards.get("coins", 0))
+	if result == "win" and c > 0:
+		Items.state["coins"] = int(Items.state.get("coins", 0)) + c
+		Items.coins_changed.emit(int(Items.state["coins"]))
+	if result == "win":
+		flags["battle_won"] = true
+		show_toast(I18n.t("kit.battle.win", {"n": c}))
+	elif result == "lose":
+		BATTLE.heal_party()
+		show_toast(I18n.t("kit.battle.lose"))
+	else:
+		show_toast(I18n.t("kit.battle.fled"))
+	_set_mode("play")
+	MusicPlayer.play(kit["music"]["world"], 0.6)
+	_refresh_texts()

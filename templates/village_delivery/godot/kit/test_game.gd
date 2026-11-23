@@ -166,6 +166,70 @@ func run() -> void:
 	check(int(IT.state["coins"]) == money, "wallet restored (%d)" % money)
 	check(Q.status(q) == "completed" and game.flags.get("ending_seen", false), "quest + flags restored")
 
+	# optional tools (Easy Portrait / NPC / Font / Battle) when this build has them
+	var feat: Dictionary = game.kit.get("features", {})
+	if feat.get("font", false):
+		var EF = al("EasyFont")
+		check(EF.font(str(game.kit["font"]["hud"])) != null, "Easy Font %s loaded" % game.kit["font"]["hud"])
+		check(EF.shape("น้ำ") != "น้ำ", "Thai shaped for the pixel font (น้ำ → presentation forms)")
+		check(game.prompt.has_meta("easyfont"), "HUD labels use the มะขาม pixel font")
+		var doc: Dictionary = game.box.runner.doc
+		check(str(doc.get("assets", {}).get("fontFiles", {}).get("body", "")).ends_with(".fnt"), "dialogue box uses the pixel font")
+	if feat.get("portrait", false):
+		var P = al("Portraits")
+		for pid in game.kit["portraits"]["ids"]:
+			check(P.has(pid) and P.texture(pid, "happy") != null, "Easy Portrait %s (blink + talk strips)" % pid)
+		game.set_language("th")
+		near("pa_daeng")
+		game.flags["ending_seen"] = false
+		game.interact()
+		var box = game.box
+		box.advance()
+		box._process(0.0)
+		game._talk_portrait(box.current_line)
+		check(game.talker != null and game.talker.visible and str(game.talker.get("character")).begins_with("town_"), "animated portrait over the dialogue box (%s)" % (game.talker.get("character") if game.talker else "-"))
+		drive_dialogue()
+		game.flags["ending_seen"] = true
+	if feat.get("npc", false):
+		var N = al("NPCs")
+		check(game.scheduled.size() >= 3, "villagers on Easy NPC schedules (%d)" % game.scheduled.size())
+		var moved: Array = []
+		for who in game.scheduled:
+			N.set_time(0, 7.0 * 60.0)
+			game._tick_npcs()
+			var a: Vector2 = game.npcs[who].position
+			N.set_time(0, 13.0 * 60.0)
+			game._tick_npcs()
+			if a.distance_to(game.npcs[who].position) > 4.0:
+				moved.append(who)
+		check(moved.size() >= 2, "villagers move with the clock 07:00 → 13:00 (%s)" % ", ".join(moved))
+		check(game.clock_label.text != "", "clock in the HUD")
+		N.set_time(0, 23.0 * 60.0)
+		game._tick_npcs()
+		check(game.time_of_day() == "night", "night at 23:00")
+		N.set_time(0, 9.0 * 60.0)
+		game._tick_npcs()
+	if feat.get("battle", false):
+		var B = al("Battle")
+		var spec: Dictionary = game.kit["battle"]
+		check(B.party.size() == spec["party"].size() and str(B.party[0]["id"]) == str(spec["party"][0]["id"]), "Easy Battle party: %s" % ", ".join(B.party.map(func(x): return str(x["id"]))))
+		check(ResourceLoader.exists("res://easybattle/heroes/%s.png" % spec["party"][0]["id"]), "hero sheet from Easy Sprite")
+		var z: Array = spec["zone"]
+		check(game.in_battle_zone(Vector2((float(z[0]) + 1.0) * 16.0, (float(z[1]) + 1.0) * 16.0)) and not game.in_battle_zone(game.npcs["pa_daeng"].position) and not game.in_battle_zone(game.npcs["lung_mee"].position + Vector2(-26, 10)), "paddy-field encounter zone (Uncle Mee stays reachable)")
+		var setup: Dictionary = B.scripted(str(spec["table"]), int(spec.get("firstSeed", 7)))
+		check(setup.get("enemies", []).size() > 0, "scripted encounter %s: %s" % [spec["table"], ", ".join(setup.get("enemies", []).map(func(e): return str(e["id"])))])
+		var full := setup.duplicate(true)
+		full["party"] = B.party.duplicate(true)
+		var eng = (load("res://easybattle/battle_engine.gd") as GDScript).new(B.db, full)
+		eng.auto_run()
+		check(eng.over == "win", "the party wins the first field battle (auto, seed %d)" % int(setup.get("seed", 0)))
+		var coins_b := int(IT.state["coins"])
+		var sc: Node = game.start_battle(setup)
+		check(game.mode == "battle" and sc != null and sc.is_inside_tree(), "battle scene opens over the village")
+		game._on_battle_end("win", {"coins": 6})
+		sc.queue_free()
+		check(game.mode == "play" and int(IT.state["coins"]) == coins_b + 6, "battle rewards paid into the wallet")
+
 	# language after load
 	game.set_language("ms")
 	var title: String = (game.hud.get_node("Quest/Title") as Label).text

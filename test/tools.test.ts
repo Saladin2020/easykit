@@ -1,6 +1,6 @@
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { KIT_PORTS, TOOL_IDS, TOOLS, isToolId, resolveTool } from "../src/lib/tools.js";
+import { BUILD_IDS, CORE_TOOL_IDS, KIT_PORTS, TOOL_IDS, TOOLS, isToolId, resolveTool } from "../src/lib/tools.js";
 import { fakeSuite, tempDir } from "./helpers.js";
 
 let dir: string;
@@ -12,8 +12,11 @@ beforeAll(async () => {
 afterAll(() => cleanup());
 
 describe("tool registry", () => {
-  it("lists the 12 tools in suite order", () => {
-    expect(TOOL_IDS).toEqual(["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"]);
+  it("lists the 17 tools in pipeline order, the 12 core ones first-class", () => {
+    expect(TOOL_IDS).toEqual(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "ship"]);
+    expect(CORE_TOOL_IDS).toEqual(["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"]);
+    expect(BUILD_IDS).not.toContain("ship");
+    for (const id of TOOL_IDS) expect(!!TOOLS[id].optional, id).toBe(!(CORE_TOOL_IDS as readonly string[]).includes(id));
     for (const id of TOOL_IDS) {
       expect(TOOLS[id].id).toBe(id);
       expect(TOOLS[id].env).toBe(TOOLS[id].pkg.toUpperCase());

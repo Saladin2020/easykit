@@ -2,9 +2,13 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** The 12 Easy tools Easy Kit drives, in pipeline order. */
-export const TOOL_IDS = ["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"] as const;
+/** The 17 Easy tools Easy Kit drives, in pipeline order (Easy Ship last: it packages a finished game). */
+export const TOOL_IDS = ["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "ship"] as const;
 export type ToolId = (typeof TOOL_IDS)[number];
+/** The original twelve: `easykit new` needs all of them. */
+export const CORE_TOOL_IDS = ["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"] as const satisfies readonly ToolId[];
+/** Content steps of `easykit new` (Easy Ship runs separately: `easykit ship`). */
+export const BUILD_IDS = TOOL_IDS.filter((t) => t !== "ship");
 
 export interface ToolSpec {
   id: ToolId;
@@ -20,6 +24,8 @@ export interface ToolSpec {
   cli: boolean;
   /** Extra local folder names tried when EASY*_HOME is unset (relative to the suite folder). */
   aliases?: string[];
+  /** Added after the first twelve: when missing, `easykit new` skips the step and the game runs without it. */
+  optional?: boolean;
 }
 
 export const TOOLS: Record<ToolId, ToolSpec> = {
@@ -35,6 +41,11 @@ export const TOOLS: Record<ToolId, ToolSpec> = {
   anim: { id: "anim", pkg: "easyanim", name: "Easy Anim", env: "EASYANIM", role: "cutscenes", ports: { serve: 8868, mcp: 8869, vite: 5182 }, cli: true },
   items: { id: "items", pkg: "easyitems", name: "Easy Items", env: "EASYITEMS", role: "item database, inventory, shops", ports: { serve: 8878, mcp: 8879, vite: 5185 }, cli: true },
   save: { id: "save", pkg: "easysave", name: "Easy Save", env: "EASYSAVE", role: "save slots + th/en/ms string tables", ports: { serve: 8898, mcp: 8899, vite: 5186 }, cli: true },
+  portrait: { id: "portrait", pkg: "easyportrait", name: "Easy Portrait", env: "EASYPORTRAIT", role: "dialogue portraits from the cast: 9 emotions, blink + talk", ports: { serve: 8968, mcp: 8969, vite: 5196 }, cli: true, aliases: ["easy-new/easyportrait"], optional: true },
+  npc: { id: "npc", pkg: "easynpc", name: "Easy NPC", env: "EASYNPC", role: "villager daily schedules, clock, day / night, affinity", ports: { serve: 8958, mcp: 8959, vite: 5195 }, cli: true, aliases: ["easy-new/easynpc"], optional: true },
+  font: { id: "font", pkg: "easyfont", name: "Easy Font", env: "EASYFONT", role: "มะขาม Thai / Latin / Malay pixel font for HUD + dialogue", ports: { serve: 8948, mcp: 8949, vite: 5194 }, cli: true, aliases: ["easy-new/easyfont"], optional: true },
+  battle: { id: "battle", pkg: "easybattle", name: "Easy Battle", env: "EASYBATTLE", role: "turn-based field encounters with the player as hero", ports: { serve: 8938, mcp: 8939, vite: 5193 }, cli: true, aliases: ["easy-new/easybattle"], optional: true },
+  ship: { id: "ship", pkg: "easyship", name: "Easy Ship", env: "EASYSHIP", role: "release builds: web / Windows / Linux / Android zips (easykit ship)", ports: { serve: 8978, mcp: 8979, vite: 5197 }, cli: true, aliases: ["easy-new/easyship"], optional: true },
 };
 
 export const KIT_PORTS = { serve: 8908, mcp: 8909, vite: 5187 } as const;

@@ -4,7 +4,7 @@ import { assembleGodot } from "./godot.js";
 import { assemblePixi } from "./pixi.js";
 import { copyTree, exists, readJson, rng, writeJson } from "./fsutil.js";
 import { ToolMcp, runCli, type ToolEnv } from "./runner.js";
-import { TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
+import { BUILD_IDS, CORE_TOOL_IDS, TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
 import { doctor } from "./doctor.js";
 
 export const TEMPLATES = ["village_delivery"] as const;
@@ -40,6 +40,14 @@ export interface Template {
   items: { shop: string };
   save: { schema: string };
   npcs: Record<string, { role: "quest" | "shop" | "bark"; speaker?: string; shop?: string }>;
+  /** Easy Portrait: town_* sets rebuilt from the generated cast (replace Easy Dialogue's samples); keep = sample ids kept. */
+  portrait?: { sets: Array<{ id: string; from: string; th: string; en: string; ms: string }>; keep?: string[] };
+  /** Easy NPC: kit map name → Easy NPC id (these villagers follow their daily schedule); clock start + speed. */
+  npc?: { map: Record<string, string>; start?: string; secondsPerMinute?: number };
+  /** Easy Font ids for the HUD, small text and the dialogue box. */
+  font?: { hud: string; small: string; dialogue: string };
+  /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
+  battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number };
 }
 
 export function templateDir(id: string): string {
@@ -116,9 +124,14 @@ export interface Ctx {
   log: (line: string) => void;
 }
 
-/** Which of the 12 tools the template needs and what each step makes. */
+/** What each step makes (Easy Ship is not a build step: see `easykit ship`). */
 export const STEP_TITLES: Record<ToolId, string> = {
   sprite: "characters → top-down + side-view sheets",
+  portrait: "dialogue portraits from the cast (blink + talk)",
+  npc: "villager schedules + day clock",
+  font: "มะขาม pixel font for HUD + dialogue",
+  battle: "paddy-field encounters + party",
+  ship: "release builds (easykit ship)",
   scene: "title backdrop from a side-view scene",
   tilemap: "village map with the generated cast",
   dialogue: "NPC dialogue + dialogue box",
@@ -207,13 +220,86 @@ const STEPS: Record<ToolId, StepFn> = {
     return [`.easy/tilemap/exports/${map}-godot`, `.easy/tilemap/exports/${map}-pixi`, `.easy/tilemap/exports/${map}-png`];
   },
 
-  async dialogue(c) {
+  async dialogue(c, notes) {
     await initTool(c, "dialogue");
     const id = c.tpl.dialogue.id;
+    // Easy Portrait sets (made from this game's cast) replace the sample portraits of the same ids.
+    const made = path.join(c.ws("portrait"), "exports", "kit-dialogue-portraits");
+    if (await exists(made)) {
+      const ids = (await readdir(made, { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name);
+      for (const pid of ids) {
+        await rm(path.join(c.ws("dialogue"), "portraits", pid), { recursive: true, force: true });
+        await copyTree(path.join(made, pid), path.join(c.ws("dialogue"), "portraits", pid));
+      }
+      notes.push(`portraits from Easy Portrait: ${ids.join(", ")}`);
+    }
     await cli(c, "dialogue", ["export", id, "--preset", "godot", "--style", c.tpl.dialogue.style]);
     await cli(c, "dialogue", ["export", id, "--preset", "pixi", "--style", c.tpl.dialogue.style]);
     await cli(c, "dialogue", ["export", id, "--preset", "json"]);
     return [`.easy/dialogue/exports/${id}-godot`, `.easy/dialogue/exports/${id}-pixi`, `.easy/dialogue/exports/${id}-json`];
+  },
+
+  async portrait(c, notes) {
+    const spec = c.tpl.portrait;
+    if (!spec) return [];
+    await initTool(c, "portrait");
+    const ws = c.ws("portrait");
+    await mkdir(path.join(ws, "sprites"), { recursive: true });
+    for (const set of spec.sets) {
+      const src = path.join(c.ws("sprite"), "projects", `kit_${set.from}.json`);
+      if (!(await exists(src))) {
+        notes.push(`${set.id}: no Easy Sprite project kit_${set.from}, sample kept`);
+        continue;
+      }
+      await copyFile(src, path.join(ws, "sprites", `kit_${set.from}.json`));
+      await cli(c, "portrait", ["from-sprite", `kit_${set.from}`, "--id", set.id, "--th", set.th, "--en", set.en, "--ms", set.ms]);
+    }
+    const ids = [...spec.sets.map((s) => s.id), ...(spec.keep ?? [])].join(",");
+    await cli(c, "portrait", ["export", "--preset", "dialogue", "--ids", ids, "--out", path.join(ws, "exports", "kit-dialogue-portraits")]);
+    await cli(c, "portrait", ["export", "--preset", "godot", "--ids", ids]);
+    await cli(c, "portrait", ["export", "--preset", "pixi", "--ids", ids]);
+    notes.push(`${spec.sets.length} portraits from the generated cast (${spec.sets.map((s) => s.th).join(", ")}) + ${(spec.keep ?? []).join(", ") || "no samples"}`);
+    return [".easy/portrait/exports/kit-dialogue-portraits", ".easy/portrait/exports/easyportrait-godot", ".easy/portrait/exports/easyportrait-pixi"];
+  },
+
+  async npc(c, notes) {
+    if (!c.tpl.npc) return [];
+    await initTool(c, "npc");
+    await cli(c, "npc", ["export", "--preset", "godot"]);
+    await cli(c, "npc", ["export", "--preset", "pixi"]);
+    notes.push(`${Object.keys(c.tpl.npc.map).length} villagers on their daily schedule (${Object.values(c.tpl.npc.map).join(", ")}); quest NPCs stay put`);
+    return [".easy/npc/exports/easynpc-godot", ".easy/npc/exports/easynpc-pixi"];
+  },
+
+  async font(c, notes) {
+    if (!c.tpl.font) return [];
+    await initTool(c, "font");
+    await cli(c, "font", ["check"]);
+    await cli(c, "font", ["export", "--preset", "godot"]);
+    await cli(c, "font", ["export", "--preset", "pixi"]);
+    notes.push(`${c.tpl.font.hud} (HUD + dialogue), ${c.tpl.font.small} (small labels); Thai text pre-shaped at build time`);
+    return [".easy/font/exports/easyfont-godot", ".easy/font/exports/easyfont-pixi"];
+  },
+
+  async battle(c, notes) {
+    const b = c.tpl.battle;
+    if (!b) return [];
+    await initTool(c, "battle");
+    const ws = c.ws("battle");
+    await mkdir(path.join(ws, "sprites"), { recursive: true });
+    for (const [hero, sheet] of Object.entries(b.heroSheets ?? {})) {
+      const src = path.join(c.assets, "sprites", "side", `${sheet}.png`);
+      if (await exists(src)) await copyFile(src, path.join(ws, "sprites", `${hero}.png`));
+    }
+    await cli(c, "battle", ["check"]);
+    await cli(c, "battle", ["export", "--preset", "godot"]);
+    await cli(c, "battle", ["export", "--preset", "pixi"]);
+    notes.push(`${b.table} in tiles ${b.zone.join(",")}; party ${b.party.map((p) => `${p.id} L${p.level}`).join(", ")}; heroes use the generated side-view sheets`);
+    return [".easy/battle/exports/easybattle-godot", ".easy/battle/exports/easybattle-pixi"];
+  },
+
+  async ship() {
+    return [];
   },
 
   async quest(c) {
@@ -357,7 +443,7 @@ export async function newProject(opts: NewProjectOptions): Promise<ProjectManife
     await rm(root, { recursive: true, force: true });
   }
   const tools = resolveAll(cfg);
-  const missing = TOOL_IDS.filter((t) => !tools[t].home);
+  const missing = CORE_TOOL_IDS.filter((t) => !tools[t].home);
   if (missing.length) throw new Error(`Missing Easy tools: ${missing.map((t) => `${TOOLS[t].name} (set ${TOOLS[t].env}_HOME)`).join(", ")} — run \`easykit doctor\``);
   await mkdir(root, { recursive: true });
 
@@ -379,9 +465,14 @@ export async function newProject(opts: NewProjectOptions): Promise<ProjectManife
     ok: false,
   };
 
-  for (const tool of TOOL_IDS) {
+  for (const tool of BUILD_IDS) {
     const t0 = Date.now();
     const notes: string[] = [];
+    if (!tools[tool].home) {
+      manifest.steps.push({ tool, title: STEP_TITLES[tool], ok: true, ms: 0, outputs: [], notes: [`skipped: ${TOOLS[tool].name} not installed (set ${TOOLS[tool].env}_HOME)`] });
+      log(`[${TOOLS[tool].name}] not installed, skipped`);
+      continue;
+    }
     log(`[${TOOLS[tool].name}] ${STEP_TITLES[tool]}…`);
     try {
       const outputs = await STEPS[tool](ctx, notes);

@@ -1,13 +1,14 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { copyTree, exists, mergeTree, readJson, walk, writeJson, type CopyReport } from "./fsutil.js";
-import { LOCALES, localizeDialogue, mergeTables, segmentDialogue, type StringTable } from "./localize.js";
+import { LOCALES, localizeDialogue, mergeTables, segmentDialogue, typesetDialogue, type StringTable } from "./localize.js";
 import type { Ctx } from "./pipeline.js";
 import { templateDir } from "./pipeline.js";
 import type { ToolId } from "./tools.js";
 
 /** Files every Easy export ships for its own demo; the kit writes its own versions. */
-const DEMO_FILES = new Set(["project.godot", "main.tscn", "main.gd", "README.txt", "README.md", "icon.svg", "screenshot.gd", "export_presets.cfg"]);
+const DEMO_FILES = new Set(["project.godot", "main.tscn", "main.gd", "README.txt", "README.md", "icon.svg", "screenshot.gd", "capture.gd", "export_presets.cfg"]);
 
 export function isDemoFile(rel: string): boolean {
   if (rel.startsWith(".godot/") || rel.endsWith(".import")) return true;
@@ -33,6 +34,56 @@ export function parseAutoloads(projectGodot: string): Array<[string, string]> {
 export interface GodotExportSource {
   tool: ToolId;
   dir: string;
+  /** Exports of the optional tools (portrait, npc, font, battle): skipped when the tool was not installed. */
+  optional?: boolean;
+}
+
+/** Optional tools whose exports this project has, per engine. */
+export type Features = { portrait: boolean; npc: boolean; font: boolean; battle: boolean };
+
+export async function features(c: Ctx, engine: "godot" | "pixi"): Promise<Features> {
+  const has = (tool: ToolId, dir: string) => exists(path.join(c.ws(tool), "exports", dir));
+  return {
+    portrait: !!c.tpl.portrait && (await has("portrait", `easyportrait-${engine}`)),
+    npc: !!c.tpl.npc && (await has("npc", `easynpc-${engine}`)),
+    font: !!c.tpl.font && (await has("font", `easyfont-${engine}`)) && (await has("font", "easyfont-pixi")),
+    battle: !!c.tpl.battle && (await has("battle", `easybattle-${engine}`)),
+  };
+}
+
+/** Easy Font's shaper (easyfont-core.js, the same code the CLI and the Pixi runtime use). */
+export async function loadShaper(c: Ctx): Promise<(s: string) => string> {
+  const core = path.join(c.ws("font"), "exports", "easyfont-pixi", "easyfont-core.js");
+  const mod = (await import(pathToFileURL(core).href)) as { shapeThai: (s: string) => string };
+  return mod.shapeThai;
+}
+
+/** Native size + line height of an Easy Font bitmap font (bitmap fonts must render at their own size). */
+export async function fontMetrics(c: Ctx, id: string): Promise<{ size: number; line: number }> {
+  const j = JSON.parse(await readFile(path.join(c.ws("font"), "exports", "easyfont-godot", "easyfont", "fonts.json"), "utf8")) as { fonts: Array<{ id: string; size: number; line: number }> };
+  const f = j.fonts.find((x) => x.id === id);
+  if (!f) throw new Error(`Easy Font has no font ${id}`);
+  return { size: f.size, line: f.line };
+}
+
+/** Dialogue-box layout for a pixel font: text, name plate and choices at the font's native size and line height. */
+export function pixelFontLayout(doc: any, id: string, m: { size: number; line: number }): void {
+  const L = doc.ui?.layout;
+  if (L?.text) Object.assign(L.text, { fontSize: m.size, lineHeight: Math.max(m.line, L.text.lineHeight ?? 0) });
+  if (L?.plate) Object.assign(L.plate, { fontSize: m.size, h: Math.max(L.plate.h ?? 0, m.line + 2) });
+  if (L?.choices) Object.assign(L.choices, { fontSize: m.size, rowH: Math.max(L.choices.rowH ?? 0, m.line) });
+  doc.ui = { ...(doc.ui ?? {}), kitFont: id };
+}
+
+/** kit.json blocks for the optional tools (null when the tool is not part of this build). */
+export function featureData(c: Ctx, f: Features) {
+  return {
+    features: f,
+    portraits: f.portrait ? { ids: [...(c.tpl.portrait?.sets ?? []).map((s) => s.id), ...(c.tpl.portrait?.keep ?? [])] } : null,
+    npcSchedule: f.npc ? c.tpl.npc : null,
+    font: f.font ? c.tpl.font : null,
+    battle: f.battle ? c.tpl.battle : null,
+  };
 }
 
 export function godotSources(c: Ctx): GodotExportSource[] {
@@ -48,6 +99,10 @@ export function godotSources(c: Ctx): GodotExportSource[] {
     e("anim", "easyanim-godot"),
     e("items", "easyitems-godot"),
     e("save", "easysave-godot"),
+    { ...e("portrait", "easyportrait-godot"), optional: true },
+    { ...e("npc", "easynpc-godot"), optional: true },
+    { ...e("font", "easyfont-godot"), optional: true },
+    { ...e("battle", "easybattle-godot"), optional: true },
   ];
 }
 
@@ -120,15 +175,21 @@ export interface DialogueBuild {
   coverage: Record<string, { total: number; translated: number; missing: number }>;
 }
 
-/** Writes <dir>/<id>.<locale>.dialogue.json (segmented + localized) from the compiled dialogue. */
-export async function writeLocalizedDialogues(c: Ctx, compiled: string, outDir: string, strings: StringTable): Promise<DialogueBuild> {
+/** Writes <dir>/<id>.<locale>.dialogue.json (segmented + localized) from the compiled dialogue. With `font`, the text
+ *  is pre-shaped for the Easy Font pixel font and the box is pointed at it. */
+export async function writeLocalizedDialogues(c: Ctx, compiled: string, outDir: string, strings: StringTable, font?: { shape: (s: string) => string; assets: (doc: any) => void }): Promise<DialogueBuild> {
   const doc = await readJson(compiled);
   const seg = segmentDialogue(doc, c.tpl.dialogue.segments);
   const coverage: DialogueBuild["coverage"] = {};
   for (const loc of LOCALES) {
     const r = localizeDialogue(seg.doc, strings, loc);
     coverage[loc] = { total: r.total, translated: r.translated, missing: r.missing.length };
-    await writeJson(path.join(outDir, `${c.tpl.dialogue.id}.${loc}.dialogue.json`), r.doc);
+    let out: any = r.doc;
+    if (font) {
+      out = typesetDialogue(out, font.shape).doc;
+      font.assets(out);
+    }
+    await writeJson(path.join(outDir, `${c.tpl.dialogue.id}.${loc}.dialogue.json`), out);
   }
   return { segmentsCut: seg.cut, coverage };
 }
@@ -175,7 +236,10 @@ export async function assembleGodot(c: Ctx): Promise<GodotBuild> {
   const merged: Record<string, number> = {};
   const translations: string[] = [];
   for (const s of godotSources(c)) {
-    if (!(await exists(s.dir))) throw new Error(`missing Godot export ${s.dir}`);
+    if (!(await exists(s.dir))) {
+      if (s.optional) continue;
+      throw new Error(`missing Godot export ${s.dir}`);
+    }
     const r = await mergeTree(s.dir, dest, { exclude: isDemoFile, owner: s.tool, owners });
     merged[s.tool] = r.copied;
     collisions.push(...r.collisions);
@@ -191,9 +255,18 @@ export async function assembleGodot(c: Ctx): Promise<GodotBuild> {
   await mkdir(path.join(dest, "kit"), { recursive: true });
   await copyFile(path.join(c.assets, "scene", "title.png"), path.join(dest, "kit", "title.png"));
   const strings = await loadGameStrings(c);
-  const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings);
+  const feat = await features(c, "godot");
+  const fontId = c.tpl.font?.dialogue;
+  const font = feat.font && fontId
+    ? await (async () => {
+        const m = await fontMetrics(c, fontId);
+        return { shape: await loadShaper(c), assets: (doc: any) => { doc.assets = { ...(doc.assets ?? {}), fontFiles: { body: `res://easyfont/${fontId}.fnt`, name: `res://easyfont/${fontId}.fnt` } }; pixelFontLayout(doc, fontId, m); } };
+      })()
+    : undefined;
+  const dialogue = await writeLocalizedDialogues(c, path.join(dest, "dialogue", `${c.tpl.dialogue.id}.dialogue.json`), path.join(dest, "dialogue"), strings, font);
   await writeJson(path.join(dest, "kit", "kit.json"), {
     ...kitData(c, "godot"),
+    ...featureData(c, feat),
     world: `res://${c.tpl.tilemap.map}.tscn`,
     questFile: `res://quests/${c.tpl.quest.id}.quests.json`,
     dialogueFiles: Object.fromEntries(LOCALES.map((l) => [l, `res://dialogue/${c.tpl.dialogue.id}.${l}.dialogue.json`])),

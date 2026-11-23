@@ -1,6 +1,6 @@
 <!-- easy-suite:header:start -->
 <p align="center">
-  <a href="#easy-suite"><img src="docs/brand/banner-kit.png" width="100%" alt="Easy Kit: one command drives all 12 Easy tools into a playable Godot + PixiJS game" /></a>
+  <a href="#easy-suite"><img src="docs/brand/banner-kit.png" width="100%" alt="Easy Kit: one command drives the Easy tools into a playable Godot + PixiJS game" /></a>
 </p>
 
 <p align="center">
@@ -26,17 +26,25 @@
   <a href="https://github.com/Saladin2020/easyitems"><img src="docs/brand/logo-items-96.png" width="32" alt="Easy Items" title="Easy Items" /></a>
   <a href="https://github.com/Saladin2020/easysave"><img src="docs/brand/logo-save-96.png" width="32" alt="Easy Save" title="Easy Save" /></a>
   <a href="https://github.com/Saladin2020/easykit"><img src="docs/brand/logo-kit-96.png" width="40" alt="Easy Kit" title="Easy Kit (this repo)" /></a>
+  <a href="https://github.com/Saladin2020/easybattle"><img src="docs/brand/logo-battle-96.png" width="32" alt="Easy Battle" title="Easy Battle" /></a>
+  <a href="https://github.com/Saladin2020/easyfont"><img src="docs/brand/logo-font-96.png" width="32" alt="Easy Font" title="Easy Font" /></a>
+  <a href="https://github.com/Saladin2020/easynpc"><img src="docs/brand/logo-npc-96.png" width="32" alt="Easy NPC" title="Easy NPC" /></a>
+  <a href="https://github.com/Saladin2020/easyportrait"><img src="docs/brand/logo-portrait-96.png" width="32" alt="Easy Portrait" title="Easy Portrait" /></a>
+  <a href="https://github.com/Saladin2020/easyship"><img src="docs/brand/logo-ship-96.png" width="32" alt="Easy Ship" title="Easy Ship" /></a>
 </p>
 <!-- easy-suite:header:end -->
 
 # Easy Kit
 
-**คำสั่งเดียว สร้างเกมที่เล่นได้จริงจากเครื่องมือ Easy ทั้ง 12 ตัว: เดินในหมู่บ้าน คุยกับ NPC ทำเควสต์ ซื้อของ ดูคัตซีน มีเพลง เอฟเฟกต์ เซฟเกม และสลับภาษา ไทย · English · Melayu**  
-`easykit new VillageDemo --template village_delivery` drives Easy Sprite, Scene, Tilemap, Dialogue, Quest, UI, SFX,
-FX, Music, Anim, Items and Save through their own CLIs and MCP servers, then assembles the exports into a
-**Godot 4.3+** project (with a passing headless test) and a **PixiJS v8** web build of the same game. A unified MCP
-server proxies all 12 tools under namespaced names (`sprite__export_character`, `save__check_all`, …) next to the
-kit's own `new_project`, `doctor` and `status`. CLI, web dashboard, MCP over stdio and HTTP; local only.
+**คำสั่งเดียว สร้างเกมที่เล่นได้จริงจากเครื่องมือ Easy: เดินในหมู่บ้าน คุยกับ NPC (มีภาพหน้าตัวละครกะพริบตา-ขยับปาก) ชาวบ้านใช้ชีวิตตามตารางเวลา มีนาฬิกาและกลางคืน ทำเควสต์ ซื้อของ สู้กับสัตว์ในทุ่งนา ดูคัตซีน มีเพลง เอฟเฟกต์ ฟอนต์พิกเซลไทย "มะขาม" เซฟเกม และสลับภาษา ไทย · English · Melayu แล้วแพ็กออกเป็นไฟล์พร้อมปล่อยด้วย Easy Ship**  
+`easykit new VillageDemo --template village_delivery` drives Easy Sprite, Portrait, Scene, Tilemap, Dialogue, NPC,
+Quest, Font, UI, SFX, FX, Music, Anim, Items, Battle and Save through their own CLIs and MCP servers, then assembles
+the exports into a **Godot 4.3+** project (with a passing headless test) and a **PixiJS v8** web build of the same
+game. `easykit ship` hands both builds to **Easy Ship** (plan by default, `--build` for local zips; never uploads).
+The 12 core tools are required; Portrait, NPC, Font, Battle and Ship are optional and the game is built without their
+parts when they are not installed. A unified MCP server proxies all 17 tools under namespaced names
+(`sprite__export_character`, `save__check_all`, …) next to the kit's own `new_project`, `ship_plan`, `doctor` and
+`status`. CLI, web dashboard, MCP over stdio and HTTP; local only.
 
 <p align="center"><img src="docs/assets/village-godot.gif" width="720" alt="VillageDemo in Godot: Ton walks through the multicultural village" /></p>
 
@@ -45,19 +53,24 @@ kit's own `new_project`, `doctor` and `status`. CLI, web dashboard, MCP over std
 | <img src="docs/assets/godot-gameplay.png" alt="Godot gameplay: village map, HUD with wallet and quest" /> | <img src="docs/assets/godot-dialogue-th.png" alt="Godot dialogue in Thai" /> |
 | **Pixi web build: title (Easy Scene backdrop)** | **Pixi web build: Bang Roti's halal stall (Easy Items)** |
 | <img src="docs/assets/web-title.png" alt="Web title screen" /> | <img src="docs/assets/web-shop.png" alt="Web shop" /> |
+| **Easy Battle: paddy-field encounter (Godot)** | **Easy NPC: the village at 20:30 (Godot)** |
+| <img src="docs/assets/godot-battle.png" alt="Godot battle: Ton and Adam against mud blobs and a giant mosquito in the paddy" /> | <img src="docs/assets/godot-night.png" alt="Godot night: villagers on their schedules, clock in the HUD" /> |
+| **Easy Portrait over the Easy Dialogue box (web)** | **มะขาม pixel font in the HUD and dialogue (Godot)** |
+| <img src="docs/assets/web-portrait.png" alt="Web dialogue with an animated Easy Portrait of Auntie Daeng" /> | <img src="docs/assets/godot-dialogue-pixel.png" alt="Godot dialogue in the มะขาม pixel font" /> |
 
 ## Quick start
 
 ```bash
-# the 12 Easy repos side by side (or set EASY<TOOL>_HOME / easykit.config.json), each with npm ci && npm run build
+# the Easy repos side by side (or set EASY<TOOL>_HOME / easykit.config.json), each with npm ci && npm run build
 npm ci && npm run build
 node dist/cli.js doctor                      # which tools are installed, versions, Godot / Chrome / xvfb
 node dist/cli.js new VillageDemo --template village_delivery --seed 7 --dir ~/games
 node dist/cli.js check ~/games/VillageDemo --shots ~/games/shots --frames
 godot --path ~/games/VillageDemo/godot       # or serve ~/games/VillageDemo/web
+node dist/cli.js ship ~/games/VillageDemo     # Easy Ship release plan; --build zips web builds locally
 ```
 
-About 30 s on a laptop. `--engine godot|pixi|both` (default both), `--seed N` varies the player's shirt colour, the
+About 50 s on a laptop with all 17 tools (30 s with the 12 core ones). `--engine godot|pixi|both` (default both), `--seed N` varies the player's shirt colour, the
 coin sound, the coin-burst particles and the village theme, `--force` replaces an existing folder.
 
 ## What `easykit new` does
@@ -65,18 +78,23 @@ coin sound, the coin-burst particles and the village theme, `--force` replaces a
 | # | Tool | What it makes for the game | How Easy Kit calls it |
 |:-:|---|---|---|
 | 1 | Easy Sprite | 8 top-down + 4 side-view sheets for the cast; the player's shirt is recoloured from the seed | MCP `export_character` (a kit-owned workspace in `.easy/sprite`) |
+| 1b | Easy Portrait *(optional)* | Dialogue portraits of ต้น, ป้าแดง, ลุงมี and ตาเพิ่ม made from the generated sheets, with blink + talk strips; they replace Easy Dialogue's sample portraits | CLI `from-sprite --th --en --ms`, `export --preset dialogue\|godot\|pixi` |
 | 2 | Easy Scene | Title backdrop: `harmony_town` rendered with the player's side-view sheet | CLI `render --mode viewport --character` |
 | 3 | Easy Tilemap | `multicultural_village` map; NPCs swapped for the generated sheets, a farmer added by the paddy | CLI `character …`, `export --target godot,pixi` |
 | 4 | Easy Dialogue | `village_delivery` story, split per NPC and localised to th / en / ms | CLI `compile`, `export` |
+| 4b | Easy NPC *(optional)* | Daily schedules for 5 villagers (Kak Fatimah, Adam, Pak Cik Ismail, Aisyah, Pak Hamid) on the same map, a day clock with night; quest NPCs stay put | CLI `init`, `export --preset godot\|pixi` |
 | 5 | Easy Quest | Delivery quest (accept → temple → farm → bonus mango → elder → report) + `QuestManager` | CLI `export` |
+| 5b | Easy Font *(optional)* | มะขาม 12 / 8 Thai · Latin · Malay pixel fonts for the HUD and the dialogue box; dialogue text is shaped at build time | CLI `init`, `check`, `export` |
 | 6 | Easy UI | Teak theme, HUD (wallet, quest panel), fonts | CLI `export` |
 | 7 | Easy SFX | Sound bank with a seeded coin sound, typing blips | CLI `add coin --seed`, `export` |
 | 8 | Easy FX | 8 effects incl. a seeded coin burst (coin, level-up, sparkle, confetti, dust, heal, fireflies, lanterns) | CLI `new --from --set seed=`, `export` |
 | 9 | Easy Music | `village_day` (seeded) for the world, `shop_theme` for the stall | CLI `new --from --set seed=`, `export` |
 | 10 | Easy Anim | Intro cutscene `village_morning_delivery` acted by the generated side-view sheets | CLI `export` |
 | 11 | Easy Items | Items database, wallet, inventory, `raya_bazaar` shop UI | CLI `export` |
+| 11b | Easy Battle *(optional)* | Paddy-field encounters (`plains_fields`), party ต้น + Adam at level 3, ต้น drawn from the generated side-view sheet | CLI `init`, `check`, `export --preset godot\|pixi` |
 | 12 | Easy Save | Save schema v3 + string tables re-extracted from this project's dialogue / quest / UI / items, plus the kit's 35 keys | CLI `extract`, `export --preset all` |
 | — | Easy Kit | Merges every Godot export into `godot/` (autoloads, translations, `kit/main.tscn` glue) and every web export into `web/` | — |
+| ⇢ | Easy Ship *(optional)* | `easykit ship`: release configs for `godot/` and `web/`, a plan, or `--build` zips in `.easy/ship/releases/` | CLI `new`, `plan`, `ship --build` (never `--upload`) |
 
 Each tool works in `<project>/.easy/<tool>` with `EASY<TOOL>_WORKSPACE` and `EASY<TOOL>_ALLOWED_DIRS` set to the
 project, so the sibling repos are never written to. Sprite sheets and every other generated asset stay in the
@@ -98,8 +116,19 @@ Thai village (Buddhist temple, wooden kampung mosque, market, paddy, river) at 4
 - **Languages**: L cycles th → en → ms for the HUD, prompts, barks and dialogue (Easy Save translations / Godot
   `TranslationServer`).
 
-The Godot test (`kit/test_game.gd`, 52 checks) and the web check (`scripts/check-web.py`, 21 checks in headless
-Chrome) play the whole quest, the shop, save/load and the language switch.
+With the optional tools installed:
+
+- **Portraits** (Easy Portrait): the speaker's portrait blinks and moves its mouth while a line types.
+- **Villagers** (Easy NPC): five villagers walk their daily schedules (stall, mosque, home, paddy); the HUD shows the
+  weekday and time, nights tint the village, barks name what the villager is doing and raise their friendship.
+- **Pixel font** (Easy Font): HUD labels, prompts, toasts and the dialogue box use มะขาม; the big title stays in Kanit.
+- **Battles** (Easy Battle): walking the paddy (tiles 37–42 × 1–6) triggers encounters, the first one scripted; win
+  coins go into the wallet, a loss heals the party. Uncle Mee's spot beside the paddy stays outside the encounter zone.
+- Battle party, villager clock and friendship are saved with F5 (Easy Save `items.npc` / `items.battle`).
+
+The Godot test (`kit/test_game.gd`, 73 checks with all tools) and the web check (`scripts/check-web.py`, 34 checks in
+headless Chrome) play the whole quest, the shop, save/load, the language switch, the portraits, the schedules, the
+pixel font and a battle.
 
 ## Project layout
 
@@ -117,24 +146,25 @@ VillageDemo/
 
 | Command | |
 |---|---|
-| `easykit new <Name> [--template village_delivery] [--engine godot\|pixi\|both] [--seed N] [--dir D] [--force] [--json]` | Scaffold a game with all 12 tools |
+| `easykit new <Name> [--template village_delivery] [--engine godot\|pixi\|both] [--seed N] [--dir D] [--force] [--json]` | Scaffold a game with the 12 core tools + the optional ones installed |
 | `easykit build <project> [--engine …]` | Re-assemble `godot/` and `web/` from the exports in `.easy/` |
 | `easykit check <project> [--no-godot] [--no-web] [--shots DIR] [--frames]` | Godot import (retried once if the first headless pass flakes; under xvfb + opengl3) + headless test, web check in headless Chrome, screenshots / GIF frames |
 | `easykit doctor [--json]` | Installed tools, versions, git commit, build state; Godot, Chrome, xvfb |
 | `easykit status [path]` | One project or every project in a folder |
-| `easykit tools` | The 12 tools, roles and ports |
+| `easykit ship <project> [--build] [--targets web,linux,windows,android] [--release V] [--itch user/game] [--json]` | Easy Ship release configs + plan; `--build` builds and zips locally. Never uploads (run `easyship ship <id> --upload` yourself) |
+| `easykit tools` | The 17 tools, roles and ports |
 | `easykit serve [--port 8908] [--projects DIR] [--dev]` | Dashboard: doctor table, new-project form, project list, play the web build (below) |
 | `easykit mcp [--http] [--port 8909] [--workspace DIR] [--project DIR]` | Unified MCP server |
 
 `python3 scripts/make-gif.py SHOTS/godot out.gif` turns `--frames` output into a GIF.
 
-<p align="center"><img src="docs/assets/dashboard.png" width="88%" alt="Easy Kit dashboard: new game form, projects with a Play link, doctor table of the 12 tools" /></p>
+<p align="center"><img src="docs/assets/dashboard.png" width="88%" alt="Easy Kit dashboard: new game form, projects with a Play link, doctor table of the Easy tools" /></p>
 
 ## MCP
 
 `easykit mcp` (stdio) or `easykit mcp --http` (`http://127.0.0.1:8909/mcp`) exposes the kit tools `new_project`,
-`build_project`, `check_project`, `doctor`, `status`, `list_tools` and proxies every installed tool as
-`<tool>__<name>`: 88 tool calls across the 12 servers (94 with the kit's own). Sibling servers start lazily on first
+`build_project`, `check_project`, `ship_plan` (plan only), `doctor`, `status`, `list_tools` and proxies every installed
+tool as `<tool>__<name>` across the 17 servers. Sibling servers start lazily on first
 use. `EASYKIT_MCP_TOOLS=save,fx` limits the proxy, `none` turns it off. See [docs/MCP.md](docs/MCP.md).
 
 ```json
@@ -156,13 +186,13 @@ Non-loopback hosts need the token printed at start (`EASYKIT_TOKEN` to set one).
 
 ```bash
 npm ci
-npm run typecheck && npm run build && npm test   # 31 tests; 3 integration tests skip without the sibling repos
-npm run smoke                                    # MCP (stdio + HTTP) and CLI smoke; `new` only when doctor is 12/12
+npm run typecheck && npm run build && npm test   # 43 tests; integration tests skip without the sibling repos
+npm run smoke                                    # MCP (stdio + HTTP) and CLI smoke; `new` / `ship` only when doctor is ok
 npm run dev                                      # API on 8908 + `npx vite --config web/vite.config.ts` on 5187
 ```
 
 CI has no sibling repos: integration tests, the proxied-MCP test and `easykit new` in the smoke test skip
-themselves (doctor reports 0/12). Locally with the whole suite they run the full pipeline. `EASYKIT_SKIP_INTEGRATION=1`
+themselves (doctor reports 0/17). Locally with the whole suite they run the full pipeline. `EASYKIT_SKIP_INTEGRATION=1`
 forces the skip.
 
 ## Limitations
@@ -174,15 +204,21 @@ forces the skip.
   first writer wins and the build lists the collisions.
 - Refusing Auntie Daeng keeps the quest available (the kit never emits the quest's `fail` event).
 - The Easy Items shop UI is laid out for 640×360 and is scaled to 75 % in the 480×270 game.
+- Only the five bark villagers follow Easy NPC schedules; the quest NPCs keep their spots so the quest stays reachable.
+- The Pixi build rolls random encounters with `Math.random` (Godot uses the Easy Battle autoload's RNG); the first
+  battle is the same scripted one in both.
+- Easy Ship web builds of the Pixi game need `pixi.min.js` in `web/` (Easy Kit bundles it); desktop / Android targets
+  need Godot export templates (and the Android SDK) — see `easyship doctor`.
 
 <!-- easy-suite:table:start -->
 ## Easy Suite
 
 <img src="docs/brand/logo-suite-96.png" width="48" align="right" alt="Easy Suite" />
 
-Thirteen small, local-first tools that share one look (teak, lantern gold, Kanit, 16/48px pixels), one
+Eighteen small, local-first tools that share one look (teak, lantern gold, Kanit, 16/48px pixels), one
 workflow (CLI · web editor · MCP server) and the same targets (**Godot 4.3+** and **PixiJS v8**).
-ชุดเครื่องมือทำเกมพิกเซลสไตล์ไทย ใช้ร่วมกันได้ทั้งชุด · **Easy Kit** builds a whole playable game from the other twelve.  
+ชุดเครื่องมือทำเกมพิกเซลสไตล์ไทย ใช้ร่วมกันได้ทั้งชุด · **Easy Kit** builds a whole playable game from the others and
+**Easy Ship** packages it for the web, desktop and Android.  
 The samples share one multicultural southern Thai village: Buddhist temple, wooden kampung mosque and
 Chinese-Thai shrine on the same street. หมู่บ้านพหุวัฒนธรรม วัด มัสยิด ศาลเจ้า อยู่ร่วมกันในเมืองเดียว
 
@@ -200,11 +236,16 @@ Chinese-Thai shrine on the same street. หมู่บ้านพหุวั�
 | <img src="docs/brand/logo-anim-96.png" width="40" alt="" /> | [**Easy Anim**](https://github.com/Saladin2020/easyanim) | Cutscene timelines: actors, camera, dialogue, FX and music cues; Godot + Pixi runners. | [`easyanim`](https://github.com/Saladin2020/easyanim) |
 | <img src="docs/brand/logo-items-96.png" width="40" alt="" /> | [**Easy Items**](https://github.com/Saladin2020/easyitems) | Item database, shops, inventory, loot tables and crafting; 44 starter items with pixel icons. | [`easyitems`](https://github.com/Saladin2020/easyitems) |
 | <img src="docs/brand/logo-save-96.png" width="40" alt="" /> | [**Easy Save**](https://github.com/Saladin2020/easysave) | Versioned save slots with migrations and checksums; Thai / English / Malay string tables. | [`easysave`](https://github.com/Saladin2020/easysave) |
-| <img src="docs/brand/logo-kit-96.png" width="40" alt="" /> | **Easy Kit** ← you are here | One command drives all 12 tools into a playable Godot 4.3+ and PixiJS game; unified MCP server and `doctor`. | [`easykit`](https://github.com/Saladin2020/easykit) |
+| <img src="docs/brand/logo-kit-96.png" width="40" alt="" /> | **Easy Kit** ← you are here | One command drives the Easy tools into a playable Godot 4.3+ and PixiJS game (portraits, schedules, battles, Thai pixel font) and ships it with Easy Ship; unified MCP server and `doctor`. | [`easykit`](https://github.com/Saladin2020/easykit) |
+| <img src="docs/brand/logo-battle-96.png" width="40" alt="" /> | [**Easy Battle**](https://github.com/Saladin2020/easybattle) | Turn-based battles: party, bestiary, skills, statuses, bosses; seeded simulator; Godot + Pixi runtimes. | [`easybattle`](https://github.com/Saladin2020/easybattle) |
+| <img src="docs/brand/logo-font-96.png" width="40" alt="" /> | [**Easy Font**](https://github.com/Saladin2020/easyfont) | Pixel bitmap fonts for Thai, Latin and Malay: stacking vowels and tones, BMFont / TTF for Godot + Pixi. | [`easyfont`](https://github.com/Saladin2020/easyfont) |
+| <img src="docs/brand/logo-npc-96.png" width="40" alt="" /> | [**Easy NPC**](https://github.com/Saladin2020/easynpc) | NPC daily schedules with A* on Easy Tilemap maps, day / night, affinity, dialogue and quest hooks. | [`easynpc`](https://github.com/Saladin2020/easynpc) |
+| <img src="docs/brand/logo-portrait-96.png" width="40" alt="" /> | [**Easy Portrait**](https://github.com/Saladin2020/easyportrait) | 64×64 dialogue portraits with 9 emotions, blink and talk frames, from Easy Sprite characters. | [`easyportrait`](https://github.com/Saladin2020/easyportrait) |
+| <img src="docs/brand/logo-ship-96.png" width="40" alt="" /> | [**Easy Ship**](https://github.com/Saladin2020/easyship) | Toolchain doctor, web / Windows / Linux / Android builds, itch.io zips and butler plans; dry run by default. | [`easyship`](https://github.com/Saladin2020/easyship) |
 
 ### Works with
 
-All twelve: Easy Kit runs each tool's own CLI (Easy Sprite through its MCP server), so a tool upgrade reaches new
+All seventeen: Easy Kit runs each tool's own CLI (Easy Sprite through its MCP server), so a tool upgrade reaches new
 projects without kit changes. `easykit doctor` shows which commit of each tool built a project, and the manifest
 records it.
 <!-- easy-suite:table:end -->

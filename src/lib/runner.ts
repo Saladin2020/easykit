@@ -32,10 +32,10 @@ export interface CliResult {
 }
 
 /** `node <home>/dist/cli.js <args…> --workspace <ws>` with the tool env. */
-export function runCli(id: ToolId, t: ToolEnv, args: string[], opts: { workspaceFlag?: boolean; timeoutMs?: number } = {}): Promise<CliResult> {
+export function runCli(id: ToolId, t: ToolEnv, args: string[], opts: { workspaceFlag?: boolean; timeoutMs?: number; env?: NodeJS.ProcessEnv } = {}): Promise<CliResult> {
   const argv = [cliPath(t.home), ...args, ...(opts.workspaceFlag === false ? [] : ["--workspace", t.workspace])];
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, argv, { cwd: t.workspace, env: toolEnv(id, t), stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(process.execPath, argv, { cwd: t.workspace, env: { ...toolEnv(id, t), ...opts.env }, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d));

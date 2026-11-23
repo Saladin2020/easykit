@@ -11,7 +11,7 @@ function ToolsPanel({ report, onRefresh }: { report: DoctorReport | null; onRefr
         <button onClick={onRefresh}>Doctor</button>
       </div>
       {!report ? (
-        <p className="muted">Checking the 12 tools…</p>
+        <p className="muted">Checking the Easy tools…</p>
       ) : (
         <>
           <p className={report.ok ? "ok" : "warn"}>{report.summary}</p>
@@ -120,7 +120,7 @@ function NewProject({ templates, onCreated }: { templates: TemplateInfo[]; onCre
           <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> replace
         </label>
         <button className="primary" disabled={busy} onClick={submit}>
-          {busy ? "Building with 12 tools…" : "Create"}
+          {busy ? "Building with the Easy tools…" : "Create"}
         </button>
       </div>
       {tpl ? (
@@ -192,7 +192,7 @@ export function App() {
             <h1 className="brand">
               Easy <span>Kit</span>
             </h1>
-            <p className="brand-th">สร้างเกมทั้งเกมจาก 12 เครื่องมือในคำสั่งเดียว</p>
+            <p className="brand-th">สร้างเกมทั้งเกมจากชุดเครื่องมือ Easy ในคำสั่งเดียว</p>
           </div>
         </div>
         <div className="status">{status}</div>
