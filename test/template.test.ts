@@ -36,4 +36,15 @@ describe.each(TEMPLATES)("template %s", (id) => {
     const files = await walk(templateDir(id));
     expect(files.filter((f) => /\.(png|webp|gif)$/.test(f))).toEqual([]);
   });
+
+  it("keeps the glue parseable without the optional tools (no direct optional autoloads or class names)", async () => {
+    const files = (await walk(templateDir(id))).filter((f) => f.endsWith(".gd") || f.endsWith(".js"));
+    for (const f of files) {
+      const src = await readFile(path.join(templateDir(id), f), "utf8");
+      // optional autoloads are looked up with get_node_or_null; their class_names must not appear either
+      expect(src, f).not.toMatch(/\b(NPCs|Battle|EasyFont|Portraits)\.[a-z_]+\(/);
+      expect(src, f).not.toMatch(/\b(EasyBattleEngine|EasyPortrait)\.new\(/);
+      expect(src, f).not.toMatch(/^import .*\.\/(battle|font|npc|portrait)\//m);
+    }
+  });
 });

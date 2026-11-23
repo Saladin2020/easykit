@@ -220,7 +220,7 @@ func run() -> void:
 		check(setup.get("enemies", []).size() > 0, "scripted encounter %s: %s" % [spec["table"], ", ".join(setup.get("enemies", []).map(func(e): return str(e["id"])))])
 		var full := setup.duplicate(true)
 		full["party"] = B.party.duplicate(true)
-		var eng := EasyBattleEngine.new(B.db, full)
+		var eng = (load("res://easybattle/battle_engine.gd") as GDScript).new(B.db, full)
 		eng.auto_run()
 		check(eng.over == "win", "the party wins the first field battle (auto, seed %d)" % int(setup.get("seed", 0)))
 		var coins_b := int(IT.state["coins"])
