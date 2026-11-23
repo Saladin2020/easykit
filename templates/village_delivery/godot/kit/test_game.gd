@@ -175,6 +175,14 @@ func run() -> void:
 		check(game.prompt.has_meta("easyfont"), "HUD labels use the มะขาม pixel font")
 		var doc: Dictionary = game.box.runner.doc
 		check(str(doc.get("assets", {}).get("fontFiles", {}).get("body", "")).ends_with(".fnt"), "dialogue box uses the pixel font")
+		var lay: Dictionary = doc.get("ui", {}).get("layout", {})
+		var fid := str(game.kit["font"]["dialogue"])
+		var fline := int(EF.fonts.get(fid, {}).get("line", 0))
+		var tl: Dictionary = lay.get("text", {})
+		check(int(tl.get("lineHeight", 0)) >= fline, "dialogue line height %d fits %s (%d px)" % [int(tl.get("lineHeight", 0)), fid, fline])
+		var need := 2 * int(tl.get("padY", 0)) + int(tl.get("maxLines", 3)) * int(tl.get("lineHeight", 0))
+		var bx: Dictionary = lay.get("box", {})
+		check(int(bx.get("h", 0)) >= need and int(bx.get("y", 0)) + int(bx.get("h", 0)) <= 270, "dialogue box %d px holds %d lines of %d px" % [int(bx.get("h", 0)), int(tl.get("maxLines", 3)), int(tl.get("lineHeight", 0))])
 	if feat.get("portrait", false):
 		var P = al("Portraits")
 		for pid in game.kit["portraits"]["ids"]:

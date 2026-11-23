@@ -66,13 +66,44 @@ export async function fontMetrics(c: Ctx, id: string): Promise<{ size: number; l
   return { size: f.size, line: f.line };
 }
 
-/** Dialogue-box layout for a pixel font: text, name plate and choices at the font's native size and line height. */
+/** Dialogue-box layout for a pixel font: text, name plate and choices at the font's native size and line height.
+ *  The box grows upwards (bottom edge kept) when its lines no longer fit, e.g. มะขาม 16's 22 px line. */
 export function pixelFontLayout(doc: any, id: string, m: { size: number; line: number }): void {
   const L = doc.ui?.layout;
   if (L?.text) Object.assign(L.text, { fontSize: m.size, lineHeight: Math.max(m.line, L.text.lineHeight ?? 0) });
   if (L?.plate) Object.assign(L.plate, { fontSize: m.size, h: Math.max(L.plate.h ?? 0, m.line + 2) });
   if (L?.choices) Object.assign(L.choices, { fontSize: m.size, rowH: Math.max(L.choices.rowH ?? 0, m.line) });
+  if (L?.box && L?.text) {
+    const need = dialogueTextHeight(L);
+    if (L.box.h < need) {
+      const bottom = L.box.y + L.box.h;
+      L.box.h = need;
+      L.box.y = Math.max(0, bottom - need);
+    }
+    const issues = dialogueFitIssues(L);
+    if (issues.length) throw new Error(`dialogue box does not fit ${id} (${m.line} px lines): ${issues.join("; ")}`);
+  }
   doc.ui = { ...(doc.ui ?? {}), kitFont: id };
+}
+
+/** Height the dialogue text needs: top and bottom padding plus maxLines lines. */
+export function dialogueTextHeight(L: any): number {
+  const t = L.text ?? {};
+  return 2 * (t.padY ?? 0) + (t.maxLines ?? 3) * (t.lineHeight ?? 0);
+}
+
+/** Problems with a dialogue layout at its font's line height (empty = it fits). */
+export function dialogueFitIssues(L: any): string[] {
+  const out: string[] = [];
+  if (!L?.box || !L?.text) return ["no box / text layout"];
+  const need = dialogueTextHeight(L);
+  if (L.box.h < need) out.push(`text needs ${need} px but the box is ${L.box.h} px`);
+  const vh = L.viewport?.height ?? 270, vw = L.viewport?.width ?? 480;
+  if (L.box.y < 0 || L.box.y + L.box.h > vh) out.push(`box ${L.box.y}..${L.box.y + L.box.h} leaves the ${vh} px viewport`);
+  if (L.box.x < 0 || L.box.x + L.box.w > vw) out.push(`box ${L.box.x}..${L.box.x + L.box.w} leaves the ${vw} px viewport`);
+  if (L.plate && L.plate.h < L.text.lineHeight + 2) out.push(`name plate ${L.plate.h} px is shorter than a line (${L.text.lineHeight} px) + 2`);
+  if (L.choices && L.choices.rowH < L.text.lineHeight) out.push(`choice rows ${L.choices.rowH} px are shorter than a line (${L.text.lineHeight} px)`);
+  return out;
 }
 
 /** kit.json blocks for the optional tools (null when the tool is not part of this build). */

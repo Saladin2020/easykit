@@ -164,9 +164,9 @@
     "main": "village_delivery"
   },
   "font": {
-    "hud": "makham-12",
+    "hud": "makham-16",
     "small": "makham-8",
-    "dialogue": "makham-12"
+    "dialogue": "makham-16"
   },
   "ui": {
     "doc": "village",
