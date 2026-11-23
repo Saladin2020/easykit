@@ -66,4 +66,13 @@ describe.skipIf(!SIBLINGS)("easykit new (12 core sibling tools + the optional on
     for (const x of r.runs) expect(x.command).not.toContain("--upload");
     expect(existsSync(path.join(dir, "ItDemo", ".easy", "ship", "releases"))).toBe(false);
   }, 120_000);
+
+  it.skipIf(!has("ship"))("adds an Android package when android is a target (existing config updated, still a plan)", async () => {
+    const r = await shipProject(path.join(dir, "ItDemo"), { targets: "web,android" });
+    expect(r.ok, r.runs.map((x) => x.output).join("\n")).toBe(true);
+    const j = JSON.parse(await readFile(path.join(dir, "ItDemo", ".easy", "ship", "ships", "itdemo.easyship.json"), "utf8")) as { targets: string[]; android?: { package: string } };
+    expect(j.android?.package).toBe("app.easysuite.itdemo");
+    expect(j.targets).toContain("android");
+    for (const x of r.runs) expect(x.command).not.toContain("--upload");
+  }, 120_000);
 });
