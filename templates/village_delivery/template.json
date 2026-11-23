@@ -221,12 +221,7 @@
   },
   "battle": {
     "table": "plains_fields",
-    "zone": [
-      35,
-      0,
-      44,
-      10
-    ],
+    "zone": [37, 1, 43, 7],
     "culture": "thai",
     "ground": "C",
     "party": [

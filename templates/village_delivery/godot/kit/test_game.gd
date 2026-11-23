@@ -215,7 +215,7 @@ func run() -> void:
 		check(B.party.size() == spec["party"].size() and str(B.party[0]["id"]) == str(spec["party"][0]["id"]), "Easy Battle party: %s" % ", ".join(B.party.map(func(x): return str(x["id"]))))
 		check(ResourceLoader.exists("res://easybattle/heroes/%s.png" % spec["party"][0]["id"]), "hero sheet from Easy Sprite")
 		var z: Array = spec["zone"]
-		check(game.in_battle_zone(Vector2((float(z[0]) + 1.0) * 16.0, (float(z[1]) + 1.0) * 16.0)) and not game.in_battle_zone(game.npcs["pa_daeng"].position), "paddy-field encounter zone")
+		check(game.in_battle_zone(Vector2((float(z[0]) + 1.0) * 16.0, (float(z[1]) + 1.0) * 16.0)) and not game.in_battle_zone(game.npcs["pa_daeng"].position) and not game.in_battle_zone(game.npcs["lung_mee"].position + Vector2(-26, 10)), "paddy-field encounter zone (Uncle Mee stays reachable)")
 		var setup: Dictionary = B.scripted(str(spec["table"]), int(spec.get("firstSeed", 7)))
 		check(setup.get("enemies", []).size() > 0, "scripted encounter %s: %s" % [spec["table"], ", ".join(setup.get("enemies", []).map(func(e): return str(e["id"])))])
 		var full := setup.duplicate(true)

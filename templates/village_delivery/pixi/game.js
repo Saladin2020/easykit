@@ -1,6 +1,8 @@
 // Easy Kit glue for the village_delivery template — PixiJS v8 build. MIT © Salahuddin Benno.
 // Every asset and runtime comes from an Easy tool export in its own folder:
 //   tilemap/ (Easy Tilemap + Easy Sprite cast) · dialogue/ · quest/ · ui/ · sfx/ · fx/ · music/ · anim/ · items/ · save/
+// Optional, when kit.json lists them in `features`: portrait/ (Easy Portrait blink + talk) · npc/ (Easy NPC schedules +
+//   clock) · font/ (Easy Font มะขาม pixel text) · battle/ (Easy Battle paddy-field encounters).
 // Keys: arrows / WASD walk · E / Enter / Space talk · L language · F5 save · F9 load · Esc skip / close.
 import { loadTilemap } from "./tilemap/easytilemap-pixi.js";
 import { loadDialogue, DialogueBox } from "./dialogue/easydialogue-pixi.js";
@@ -19,6 +21,11 @@ const SPEED = 72;
 const TALK_RANGE = 28;
 const SLOT = "quick";
 const THAI = /[\u0E01-\u0E3A\u0E40-\u0E5B]/;
+const DAYS = {
+  th: { mon: "จันทร์", tue: "อังคาร", wed: "พุธ", thu: "พฤหัสฯ", fri: "ศุกร์", sat: "เสาร์", sun: "อาทิตย์" },
+  en: { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" },
+  ms: { mon: "Isnin", tue: "Selasa", wed: "Rabu", thu: "Khamis", fri: "Jumaat", sat: "Sabtu", sun: "Ahad" },
+};
 
 export async function startGame(PIXI, mount) {
   PIXI.TextureSource.defaultOptions.scaleMode = "nearest";
@@ -45,6 +52,12 @@ export async function startGame(PIXI, mount) {
   const music = await loadMusic("music/easymusic.json");
   const titleTex = await PIXI.Assets.load(kit.titleImage);
   const sfx = (id, volume = 1) => { if (bank.has(id)) bank.play(id, { volume }).catch?.(() => undefined); };
+  // optional tools: loaded only when this build has them
+  const feat = kit.features ?? {};
+  const ef = feat.font ? await (await import("./font/easyfont-pixi.js")).loadEasyFonts(PIXI, "font/fonts/fonts.json") : null;
+  const plib = feat.portrait ? await (await import("./portrait/easyportrait-pixi.js")).loadPortraits(PIXI, "portrait/portraits.json") : null;
+  const npcRt = feat.npc ? await (await import("./npc/easynpc-pixi.js")).loadNpcs(PIXI, "npc/easynpc.world.json") : null;
+  const eb = feat.battle ? await (await import("./battle/easybattle-pixi.js")).loadBattle(PIXI, "battle/easybattle.json") : null;
 
   // ---------------------------------------------------------------- layers
   const worldLayer = new PIXI.Container();
@@ -66,20 +79,48 @@ export async function startGame(PIXI, mount) {
   const npcFor = (speaker) => Object.keys(kit.npcs).find((n) => kit.npcs[n].speaker === speaker) ?? "";
   const q = kit.quest.main;
 
+  // ---------------------------------------------------------------- Easy Font: มะขาม pixel text for HUD-sized labels
+  /** Like ui.text (x, y = baseline, size, align) but in the pixel font with a 1px shadow; big titles stay in Kanit. */
+  function ftext(str, o = {}) {
+    if (!ef || (o.size ?? 10) > 12) return ui.text(str, o);
+    const id = (o.size ?? 10) <= 9 ? kit.font.small : kit.font.hud;
+    const f = ef.fonts[id];
+    const c = new PIXI.Container();
+    const shadow = ef.text("", { font: id, fill: 0x1a120c });
+    const t = ef.text("", { font: id, fill: o.fill ?? 0xf7ebd3 });
+    const ax = o.align === "center" ? 0.5 : o.align === "right" ? 1 : 0;
+    for (const x of [shadow, t]) x.anchor?.set?.(ax, 0);
+    shadow.position.set(1, 1);
+    c.addChild(shadow, t);
+    c.position.set(Math.round(o.x ?? 0), Math.round((o.y ?? 0) - f.baseline));
+    c.__raw = "";
+    c.__pixel = id;
+    c.setText = (s) => {
+      c.__raw = s;
+      const shaped = o.wrap ? ef.wrap(s, id, o.wrap) : ef.shape(s);
+      shadow.text = shaped;
+      t.text = shaped;
+    };
+    c.setText(str);
+    return c;
+  }
+
   // ---------------------------------------------------------------- HUD
   const coinPanel = ui.panel({ x: W - 96, y: 6, w: 90, h: 22 });
   const coinIcon = ui.icon("coin");
   coinIcon.position.set(W - 92, 9);
-  const coinText = ui.text("", { x: W - 12, y: 21, size: 10, align: "right" });
-  const questPanel = ui.panel({ x: W - 186, y: 32, w: 180, h: 34 });
-  const questTitle = ui.text("", { x: W - 178, y: 45, size: 9, title: true });
-  const questText = ui.text("", { x: W - 178, y: 59, size: 8 });
-  const prompt = ui.text("", { x: W / 2, y: 214, size: 10, align: "center" });
-  const toast = ui.text("", { x: W / 2, y: 124, size: 11, align: "center" });
-  hudLayer.addChild(coinPanel, coinIcon, coinText, questPanel, questTitle, questText, prompt, toast);
+  const coinText = ftext("", { x: W - 12, y: 21, size: 10, align: "right" });
+  const questPanel = ui.panel({ x: W - 186, y: 32, w: 180, h: ef ? 38 : 34 });
+  const questTitle = ftext("", { x: W - 178, y: ef ? 44 : 45, size: 9, title: true });
+  const questText = ftext("", { x: W - 178, y: ef ? 60 : 59, size: 8 });
+  const prompt = ftext("", { x: W / 2, y: 214, size: 10, align: "center" });
+  const toast = ftext("", { x: W / 2, y: 124, size: 11, align: "center" });
+  const clockText = ftext("", { x: 8, y: 18, size: 10 });
+  clockText.visible = !!npcRt;
+  hudLayer.addChild(coinPanel, coinIcon, coinText, questPanel, questTitle, questText, prompt, toast, clockText);
   let toastLeft = 0;
   const setText = (t, s) => (t.setText ? t.setText(s) : (t.text = s));
-  const getText = (t) => (t.children?.length ? t.children[t.children.length - 1].text : t.text) ?? "";
+  const getText = (t) => t.__raw ?? (t.children?.length ? t.children[t.children.length - 1].text : t.text) ?? "";
   function showToast(s, secs = 2.2) { setText(toast, s); toastLeft = secs; }
 
   function questLines() {
@@ -123,11 +164,115 @@ export async function startGame(PIXI, mount) {
         Object.assign(r.vars, manager.vars);
         if (n === "sfx" && a[0]) sfx(a[0]);
       },
-      onLine: (ev) => sfx({ kid: "blip_kid", vendor: "blip_auntie", monk: "blip_monk", elder: "blip_elder" }[ev.speaker] ?? "blip_mid", 0.4),
+      onLine: (ev) => (talkPortrait(ev), sfx({ kid: "blip_kid", vendor: "blip_auntie", monk: "blip_monk", elder: "blip_elder" }[ev.speaker] ?? "blip_mid", 0.4)),
       onEnd: (vars) => finishSegment(vars),
     });
     box.view.visible = false;
     dialogueLayer.addChild(box.view);
+    if (ef && box.doc.ui?.kitFont) pixelBox(box, box.doc.ui.kitFont);
+    talker = null;
+    talkers.clear(); // their containers went with the old box
+  }
+
+  /** Swap the dialogue box's Kanit texts for the Easy Font pixel font (the dialogue text was shaped at build time). */
+  function pixelBox(b, fid) {
+    const f = ef.fonts[fid];
+    const mk = (fill) => {
+      const t = new PIXI.BitmapText({ text: "", style: { fontFamily: f.family, fontSize: f.size, fill } });
+      t.roundPixels = true;
+      t.pivot.y = f.bitmap.baseLineOffset ?? 0;
+      return t;
+    };
+    const swap = (key, t) => {
+      const old = b[key];
+      b.view.addChildAt(t, b.view.getChildIndex(old));
+      old.destroy();
+      b[key] = t;
+    };
+    swap("body", mk(b.C.text));
+    swap("nameText", mk(b.C.plateText));
+    const L = b.L;
+    const showLine = b.showLine.bind(b);
+    b.showLine = (ev) => {
+      const onLine = b.opts.onLine;
+      b.opts.onLine = null;
+      showLine(ev);
+      b.opts.onLine = onLine;
+      const ps = L.portrait.size;
+      const pad = L.portrait.pad;
+      const right = ev.side === "right";
+      let textX = L.box.x + L.text.padX;
+      let textW = L.box.w - L.text.padX * 2;
+      if (b.portrait.visible) {
+        if (!right) textX = b.portrait.x + ps + pad + 3;
+        textW = L.box.w - (ps + pad * 2 + 3) - L.text.padX;
+      }
+      b.fullText = ef.wrap(ev.text, fid, textW).split("\n").slice(0, L.text.maxLines).join("\n");
+      b.clusters = [...b.fullText];
+      b.total = b.clusters.length;
+      b.revealed = 0;
+      b.body.text = "";
+      b.body.position.set(Math.round(textX), L.box.y + L.text.padY + (ev.name ? 4 : 0) - 3);
+      if (ev.name) {
+        const pw = Math.ceil(b.nameText.width + L.plate.padX * 2);
+        b.plate.width = pw;
+        b.nameText.position.set(Math.round(b.plate.x + L.plate.padX), Math.round(b.plate.y + (L.plate.h - f.line) / 2));
+        b.plateBar.clear();
+        if (ev.color) b.plateBar.rect(b.plate.x + 3, b.plate.y + L.plate.h - 4, pw - 6, 1).fill(ev.color);
+      }
+      onLine?.(ev);
+    };
+    const showChoices = b.showChoices.bind(b);
+    b.showChoices = (ev) => {
+      showChoices(ev);
+      const C2 = L.choices;
+      const w = Math.ceil(Math.max(C2.minW, ...ev.options.map((o) => ef.measure(o.text, fid) + C2.padX + 14)));
+      b.choicePanel.x = L.box.x + L.box.w - w;
+      b.choicePanel.children[0].width = w;
+      b.choiceW = w;
+      b.rows = b.rows.map((old, i) => {
+        const t = mk(b.C.choice);
+        t.text = ev.options[i].text;
+        t.position.set(C2.padX, C2.padY + i * C2.rowH + Math.round((C2.rowH - f.line) / 2));
+        t.eventMode = "static";
+        t.cursor = "pointer";
+        t.on("pointerover", () => { if (!ev.options[i].disabled) b.select(i); });
+        t.on("pointertap", () => b.choose(i));
+        b.choicePanel.addChildAt(t, b.choicePanel.getChildIndex(old));
+        old.destroy();
+        return t;
+      });
+      b.select(0);
+    };
+  }
+
+  // ---------------------------------------------------------------- Easy Portrait: blink + talk over the dialogue box
+  let talker = null;
+  const talkers = new Map();
+  async function talkPortrait(ev) {
+    if (!plib || !box) return;
+    const pid = ev.portrait;
+    if (talker) talker.container.visible = false;
+    if (!pid || !plib.index.portraits.some((x) => x.id === pid)) return;
+    let p = talkers.get(pid);
+    try {
+      if (!p) {
+        p = await plib.portrait(pid, { emotion: ev.emotion ?? "neutral" });
+        talkers.set(pid, p);
+      } else await p.setEmotion(ev.emotion ?? "neutral");
+    } catch {
+      return;
+    }
+    if (box.line !== ev) return;
+    if (p.container.parent !== box.view) box.view.addChildAt(p.container, box.view.getChildIndex(box.portrait) + 1);
+    const s = box.L.portrait.size / (p.sprite.texture.width || box.L.portrait.size);
+    p.sprite.scale.set(s);
+    p.container.position.set(box.portrait.x, box.portrait.y);
+    p.container.visible = box.portrait.visible;
+    box.portrait.alpha = p.container.visible ? 0 : 1;
+    p.say(Math.min(4, Math.max(0.4, String(ev.text ?? "").length / 40)));
+    talker = p;
+    state.events.push(`portrait:${pid}`);
   }
 
   manager.on((name, ...args) => {
@@ -239,11 +384,30 @@ export async function startGame(PIXI, mount) {
       const hint = `quest.${q}.step.${step}.hint`;
       text = T(hint) !== hint ? T(hint) : T(`quest.${q}.step.${step}`);
     }
+    const nid = scheduled.get(npc);
+    if (nid && npcRt) {
+      const nn = npcRt.world.npcs.find((x) => x.id === nid);
+      npcRt.engine.talk(nn, (clock.bonds[nid] ??= npcRt.engine.newBond(nn)), clock.day);
+      const st = npcRt.engine.state(npcRt.world, nid, clock.day, clock.minute);
+      const act = npcRt.world.activities[st.activity];
+      if (act) text += `\n(${act[i18n.locale] ?? act.en})`;
+    }
     const n = npcs.get(npc);
-    const lines = ui.wrap(text, 150, 8);
-    const h = 10 + lines.length * 11;
-    const bubble = ui.panel({ x: 0, y: 0, w: 160, h, small: true });
-    lines.forEach((l, i) => bubble.addChild(ui.text(l, { x: 6, y: 13 + i * 11, size: 8 })));
+    let lines;
+    let h;
+    let bubble;
+    if (ef) {
+      const t = ftext(text, { x: 6, y: 18, size: 8, wrap: 148 });
+      const nl = ef.wrap(text, kit.font.small, 148).split("\n").length;
+      h = 10 + nl * ef.fonts[kit.font.small].line;
+      bubble = ui.panel({ x: 0, y: 0, w: 160, h, small: true });
+      bubble.addChild(t);
+    } else {
+      lines = ui.wrap(text, 150, 8);
+      h = 10 + lines.length * 11;
+      bubble = ui.panel({ x: 0, y: 0, w: 160, h, small: true });
+      lines.forEach((l, i) => bubble.addChild(ui.text(l, { x: 6, y: 13 + i * 11, size: 8 })));
+    }
     bubble.position.set(Math.round(n.sprite.x - 80), Math.round(n.sprite.y - 60 - h));
     bubble.zIndex = 100001;
     map.world.addChild(bubble);
@@ -291,10 +455,10 @@ export async function startGame(PIXI, mount) {
     const shade = new PIXI.Graphics().rect(0, 150, W, 120).fill({ color: 0x0d0805, alpha: 0.5 });
     titleTexts = {
       title: ui.text("", { x: W / 2, y: 182, size: 22, align: "center", title: true }),
-      press: ui.text("", { x: W / 2, y: 204, size: 12, align: "center" }),
-      lang: ui.text("", { x: W / 2, y: 222, size: 10, align: "center" }),
-      keys: ui.text("", { x: W / 2, y: 244, size: 9, align: "center" }),
-      cont: ui.text("", { x: W / 2, y: 260, size: 9, align: "center" }),
+      press: ftext("", { x: W / 2, y: 204, size: 12, align: "center" }),
+      lang: ftext("", { x: W / 2, y: 222, size: 10, align: "center" }),
+      keys: ftext("", { x: W / 2, y: 244, size: 9, align: "center" }),
+      cont: ftext("", { x: W / 2, y: 260, size: 9, align: "center" }),
     };
     titleLayer.addChild(bg, shade, ...Object.values(titleTexts));
     fillTitle();
@@ -323,7 +487,7 @@ export async function startGame(PIXI, mount) {
     cs.data.lang = i18n.locale === "th" ? "th" : "en";
     cs.view.scale.set(1.5);
     cutLayer.removeChildren();
-    cutLayer.addChild(new PIXI.Graphics().rect(0, 0, W, H).fill(0x000000), cs.view, ui.text(T("kit.skip"), { x: W - 6, y: 264, size: 8, align: "right" }));
+    cutLayer.addChild(new PIXI.Graphics().rect(0, 0, W, H).fill(0x000000), cs.view, ftext(T("kit.skip"), { x: W - 6, y: 264, size: 8, align: "right" }));
     cs.on("finished", endCutscene);
     cs.play();
   }
@@ -343,6 +507,7 @@ export async function startGame(PIXI, mount) {
   }
   function setMode(m) {
     state.mode = m;
+    clock.running = m === "play";
     ctl.speed = m === "play" ? SPEED : 0;
     if (m !== "play") map.keys.clear();
     refreshPrompt();
@@ -359,6 +524,7 @@ export async function startGame(PIXI, mount) {
     }
     showToast(T("kit.toast.lang"));
     refreshTexts();
+    tickNpcs();
   }
   const cycleLanguage = () => setLanguage(kit.locales[(kit.locales.indexOf(i18n.locale) + 1) % kit.locales.length]);
 
@@ -388,10 +554,10 @@ export async function startGame(PIXI, mount) {
     const face = { front: "down", back: "up", left: "left", right: "right" };
     return {
       player: { name: T(`dlg.${kit.dialogue.id}.char.kid`).slice(0, 16), money: inv.state.coins, scene: spawnNear(), pos: { x: player.sprite.x, y: player.sprite.y }, facing: face[player.facing] ?? "down", bike: "none" },
-      day: 1,
-      time_of_day: "morning",
+      day: npcRt ? clock.day + 1 : 1,
+      time_of_day: timeOfDay(),
       quests: { active, done, steps, vars },
-      items: { inventory: structuredClone(inv.state), quest_items: qs.items, seen: qs.seen, status },
+      items: { inventory: structuredClone(inv.state), quest_items: qs.items, seen: qs.seen, status, npc: npcRt ? { day: clock.day, minute: clock.minute, bonds: structuredClone(clock.bonds) } : {}, battle: eb ? structuredClone(battle) : {} },
       flags: { ...state.flags },
       deliveries: [["monk", "sticky_rice", "temple"], ["farmer", "morning_glory", "farm"], ["elder", "balm", "elder"]].map(([to, item, step]) => ({ to, item, done: manager.stepDone(q, step) })),
       settings: { locale: i18n.locale },
@@ -430,6 +596,8 @@ export async function startGame(PIXI, mount) {
       inv.emit?.();
     }
     state.flags = { ...(d.flags ?? {}) };
+    if (npcRt && it.npc?.bonds) Object.assign(clock, { day: it.npc.day ?? 0, minute: it.npc.minute ?? clock.minute, bonds: structuredClone(it.npc.bonds) });
+    if (eb && it.battle?.party) Object.assign(battle, structuredClone(it.battle));
     player.sprite.position.set(d.player?.pos?.x ?? player.sprite.x, d.player?.pos?.y ?? player.sprite.y);
     state.playtime = d.stats?.playtime ?? 0;
     const loc = d.settings?.locale;
@@ -442,6 +610,109 @@ export async function startGame(PIXI, mount) {
   }
   es.startAutosave?.(buildSave, saveMeta);
 
+  // ---------------------------------------------------------------- Easy NPC: villagers on their daily schedule
+  const spec = kit.npcSchedule ?? {};
+  const toMin = (s) => { const [h, m] = String(s ?? "07:00").split(":").map(Number); return h * 60 + (m || 0); };
+  const clock = { day: 0, minute: toMin(spec.start), running: false, bonds: {}, spm: spec.secondsPerMinute ?? npcRt?.world.clock.secondsPerMinute ?? 1 };
+  const scheduled = new Map();
+  let nightShade = null;
+  if (npcRt) {
+    for (const [name, nid] of Object.entries(spec.map ?? {})) {
+      const a = npcs.get(name);
+      if (!a || !npcRt.world.npcs.some((x) => x.id === nid)) continue;
+      a.c.patrol = null;
+      scheduled.set(name, nid);
+    }
+    nightShade = new PIXI.Graphics().rect(0, 0, W, H).fill({ color: 0x1a2350, alpha: 0.38 });
+    nightShade.visible = false;
+    app.stage.addChildAt(nightShade, app.stage.getChildIndex(worldLayer) + 1);
+  }
+  const isNight = () => !!npcRt && npcRt.engine.isNight(npcRt.world.clock, clock.minute);
+  function timeOfDay() {
+    if (!npcRt) return "morning";
+    if (isNight()) return "night";
+    return clock.minute < 660 ? "morning" : clock.minute < 960 ? "noon" : "evening";
+  }
+  /** Place the scheduled villagers: Easy NPC tiles → map pixels (feet anchored like Easy Tilemap). */
+  function tickNpcs() {
+    if (!npcRt) return;
+    for (const [name, nid] of scheduled) {
+      const st = npcRt.engine.state(npcRt.world, nid, clock.day, clock.minute);
+      const a = npcs.get(name);
+      a.sprite.position.set(Math.round(st.x * 16 + 8), Math.round(st.y * 16 + 15));
+      a.sprite.visible = !st.indoors;
+      a.face(st.facing);
+      a.walk(!!st.moving);
+      a.sprite.zIndex = a.sprite.y;
+    }
+    const wd = npcRt.engine.weekday(npcRt.world.clock, clock.day);
+    const label = `${(DAYS[i18n.locale] ?? DAYS.en)[wd] ?? wd} ${npcRt.engine.fmtTime(clock.minute)}`;
+    if (getText(clockText) !== label) setText(clockText, label);
+    nightShade.visible = isNight();
+  }
+  const setClock = (minute, day = clock.day) => { clock.minute = minute; clock.day = day; tickNpcs(); };
+
+  // ---------------------------------------------------------------- Easy Battle: paddy-field encounters
+  const bspec = kit.battle ?? null;
+  const battle = { party: (bspec?.party ?? []).map((p) => ({ id: p.id, level: p.level ?? 1, xp: 0 })), steps: 0, first: false, won: 0 };
+  let battleUi = null;
+  let lastTile = "";
+  const inBattleZone = (x, y) => {
+    if (!eb || !bspec) return false;
+    const [x0, y0, x1, y1] = bspec.zone;
+    const tx = Math.floor(x / 16);
+    const ty = Math.floor(y / 16);
+    return tx >= x0 && ty >= y0 && tx < x1 && ty < y1;
+  };
+  function checkEncounter() {
+    if (!inBattleZone(player.sprite.x, player.sprite.y)) return;
+    const tile = `${Math.floor(player.sprite.x / 16)},${Math.floor(player.sprite.y / 16)}`;
+    if (tile === lastTile) return;
+    lastTile = tile;
+    if (!battle.first) return startBattle(eb.scripted(bspec.table, bspec.firstSeed ?? 7));
+    const rate = eb.db.encounters.find((t) => t.id === bspec.table)?.rate ?? 28;
+    battle.steps++;
+    if (battle.steps < 4 || Math.random() * rate >= 1) return;
+    battle.steps = 0;
+    startBattle(eb.scripted(bspec.table, Math.floor(Math.random() * 0x7fffffff)));
+  }
+  function startBattle(setup, opts = {}) {
+    battle.first = true;
+    state.events.push(`battle:${setup.table}`);
+    setMode("battle");
+    setText(prompt, "");
+    battleUi = eb.start(app, { ...setup, party: battle.party.map((p) => ({ ...p })) }, {
+      lang: i18n.locale,
+      ...opts,
+      onEnd: (result, rewards) => battleEnded(result, rewards),
+      onClose: () => leaveBattle(),
+    });
+    return battleUi;
+  }
+  function battleEnded(result, rewards = {}) {
+    state.events.push(`battle_end:${result}`);
+    const c = result === "win" ? Number(rewards.coins ?? 0) : 0;
+    if (c > 0) {
+      inv.state.coins += c;
+      inv.emit?.();
+    }
+    if (result === "win") {
+      battle.won++;
+      for (const p of battle.party) p.xp = (p.xp ?? 0) + Number(rewards.xp ?? 0);
+      for (const l of rewards.levels ?? []) {
+        const p = battle.party.find((x) => x.id === l.id);
+        if (p) p.level = l.to;
+      }
+      showToast(T("kit.battle.win", { n: c }));
+    } else showToast(T(result === "lose" ? "kit.battle.lose" : "kit.battle.fled"));
+    refreshHud();
+  }
+  function leaveBattle() {
+    battleUi = null;
+    if (state.mode === "battle") setMode("play");
+    music.play(kit.music.world, { fade: 0.6 }).catch(() => undefined);
+  }
+
   // ---------------------------------------------------------------- loop + input
   inv.onChange?.(() => refreshHud());
   app.ticker.add((tk) => {
@@ -449,12 +720,19 @@ export async function startGame(PIXI, mount) {
     map.update(dt);
     box?.update(dt);
     cs?.update(dt);
+    talker?.update(dt);
+    if (npcRt && clock.running) {
+      clock.minute += dt / clock.spm;
+      while (clock.minute >= 1440) (clock.minute -= 1440), clock.day++;
+    }
+    tickNpcs();
     if (state.mode === "play") {
       state.playtime += dt;
+      checkEncounter();
       let best = "";
       let bd = TALK_RANGE;
       for (const [n, a] of npcs) {
-        if (!kit.npcs[n]) continue;
+        if (!kit.npcs[n] || !a.sprite.visible) continue;
         const d = Math.hypot(a.sprite.x - player.sprite.x, a.sprite.y - player.sprite.y);
         if (d < bd) (bd = d), (best = n);
       }
@@ -468,6 +746,7 @@ export async function startGame(PIXI, mount) {
 
   addEventListener("keydown", async (e) => {
     const k = e.key.toLowerCase();
+    if (state.mode === "battle") return; // Easy Battle has its own keys
     if (["f5", "f9", " ", "arrowup", "arrowdown"].includes(k)) e.preventDefault();
     if (state.mode === "title") {
       if (k === "enter" || k === " " || k === "e") await startGame();
@@ -521,7 +800,12 @@ export async function startGame(PIXI, mount) {
       state.near = npc;
       map.update(0);
     },
-    hud: () => ({ coins: getText(coinText), questTitle: getText(questTitle), questText: getText(questText), prompt: getText(prompt), toast: getText(toast) }),
+    hud: () => ({ coins: getText(coinText), questTitle: getText(questTitle), questText: getText(questText), prompt: getText(prompt), toast: getText(toast), clock: getText(clockText) }),
+    features: feat, ef, plib, npcRt, eb, clock, scheduled, setClock, timeOfDay, battle, startBattle, inBattleZone,
+    get battleUi() { return battleUi; },
+    get talker() { return talker; },
+    pixelFont: () => ({ hud: questTitle.__pixel ?? null, dialogue: box?.body?.constructor?.name ?? null }),
+    npcPos: (name) => { const a = npcs.get(name); return { x: a.sprite.x, y: a.sprite.y, visible: a.sprite.visible }; },
     hasThai: (s) => THAI.test(s),
   };
   window.__ready = true;
