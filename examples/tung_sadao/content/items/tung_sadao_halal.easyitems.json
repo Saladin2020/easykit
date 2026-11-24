@@ -1,0 +1,142 @@
+{
+  "format": "easyitems/1",
+  "id": "tung_sadao_halal",
+  "name": {
+    "th": "ร้านโรตีฮาลาลบังหมัด",
+    "en": "Bang Mat's halal roti stall",
+    "ms": "Gerai roti halal Bang Mat"
+  },
+  "items": [
+    {
+      "id": "roti_mataba",
+      "name": {
+        "th": "มะตะบะไก่",
+        "en": "Chicken murtabak",
+        "ms": "Murtabak ayam"
+      },
+      "category": "food",
+      "price": 35,
+      "stack": 10,
+      "icon": "roti",
+      "desc": {
+        "th": "แป้งโรตีห่อไก่และไข่ ทอดกรอบ",
+        "en": "Roti folded around chicken and egg"
+      },
+      "effects": [
+        {
+          "kind": "heal",
+          "amount": 35
+        }
+      ],
+      "tags": [
+        "halal",
+        "thai_muslim"
+      ],
+      "halal": true
+    },
+    {
+      "id": "khao_mok_gai",
+      "name": {
+        "th": "ข้าวหมกไก่",
+        "en": "Chicken khao mok",
+        "ms": "Nasi briyani ayam"
+      },
+      "category": "food",
+      "price": 45,
+      "stack": 10,
+      "icon": "rendang",
+      "desc": {
+        "th": "ข้าวหมกขมิ้นกับไก่ทอด น้ำจิ้มเขียว",
+        "en": "Turmeric rice with chicken and green sauce"
+      },
+      "effects": [
+        {
+          "kind": "heal",
+          "amount": 45
+        }
+      ],
+      "tags": [
+        "halal",
+        "thai_muslim"
+      ],
+      "halal": true
+    },
+    {
+      "id": "cha_chak",
+      "name": {
+        "th": "ชาชัก",
+        "en": "Pulled tea",
+        "ms": "Teh tarik"
+      },
+      "category": "drink",
+      "price": 15,
+      "stack": 10,
+      "icon": "teh_tarik",
+      "desc": {
+        "th": "ชาชักหวานมัน ชงกันสดๆ",
+        "en": "Sweet pulled milk tea"
+      },
+      "effects": [
+        {
+          "kind": "heal",
+          "amount": 10
+        },
+        {
+          "kind": "mood",
+          "amount": 5
+        }
+      ],
+      "tags": [
+        "halal"
+      ],
+      "halal": true
+    }
+  ],
+  "shops": [
+    {
+      "id": "halal_stall",
+      "name": {
+        "th": "ร้านโรตีฮาลาลบังหมัด",
+        "en": "Bang Mat's halal stall",
+        "ms": "Gerai halal Bang Mat"
+      },
+      "keeper": "bang_roti",
+      "buyMod": 1.0,
+      "sellMod": 0.5,
+      "halal": true,
+      "buys": [
+        "food",
+        "drink"
+      ],
+      "tags": [
+        "halal",
+        "thai_muslim"
+      ],
+      "stock": [
+        {
+          "item": "roti_mataba",
+          "qty": 8,
+          "restock": 1
+        },
+        {
+          "item": "khao_mok_gai",
+          "qty": 6,
+          "restock": 1
+        },
+        {
+          "item": "cha_chak",
+          "qty": -1
+        },
+        {
+          "item": "roti",
+          "qty": 10,
+          "restock": 1
+        },
+        {
+          "item": "teh_tarik",
+          "qty": -1
+        }
+      ]
+    }
+  ]
+}

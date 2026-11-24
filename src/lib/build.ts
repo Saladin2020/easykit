@@ -271,7 +271,8 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
       stamp: toolStamp(ctx, tool, rep),
       upstream: STEP_DEPS[tool].map((d) => hashes[d] ?? null),
     });
-    hashes[tool] = hash;
+    // downstream steps see this step's inputs *and* its resulting workspace (so an edited source rebuilds its dependants)
+    const settle = () => (hashes[tool] = sha([hash, state.steps[tool]?.post ?? null]));
     const prev = state.steps[tool];
     const s0 = Date.now();
     const selected = !opts.only || opts.only.includes(tool);
@@ -283,6 +284,7 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
     if (!reason || !selected) {
       report.steps.push({ tool, title, status: "skipped", reason: selected ? "unchanged" : "not in --only", ms: 0, outputs: prev?.outputs ?? [], notes: prev?.notes ?? [] });
       pm.steps.push({ tool, title, ok: true, ms: 0, outputs: prev?.outputs ?? [], notes: prev?.notes ?? [] });
+      settle();
       continue;
     }
     log(`[${TOOLS[tool].name}] ${title} (${reason})…`);
@@ -291,6 +293,7 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
       const outputs = await STEPS[tool](ctx, notes);
       state.steps[tool] = { hash, post: await hashDir(ctx.ws(tool)), outputs, notes };
       state.choices = { ...ctx.choices };
+      settle();
       report.steps.push({ tool, title, status: "built", reason, ms: Date.now() - s0, outputs, notes });
       pm.steps.push({ tool, title, ok: true, ms: Date.now() - s0, outputs, notes });
       await writeJson(statePath, state);

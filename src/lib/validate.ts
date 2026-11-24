@@ -94,7 +94,8 @@ export function crossCheck(m: GameManifest, c: Catalog): Issue[] {
   // --- NPC roles + schedules
   for (const [who, r] of Object.entries(m.npcs.roles)) {
     const p = `npcs.roles.${who}`;
-    if (map && !map.characters.has(who)) warn("npc.onmap", p, `"${who}" ไม่ได้อยู่บนแผนที่ ${m.tilemaps.main}`, `"${who}" is not a character on map ${m.tilemaps.main}`);
+    const placed = m.sprites.cast.some((x) => (x.map ?? x.id) === who && x.at);
+    if (map && !placed && !map.characters.has(who)) warn("npc.onmap", p, `"${who}" ไม่ได้อยู่บนแผนที่ ${m.tilemaps.main}`, `"${who}" is not a character on map ${m.tilemaps.main}`);
     if (r.role === "quest" && !r.speaker) err("npc.speaker", p, `NPC ภารกิจ "${who}" ต้องมี speaker`, `quest NPC "${who}" needs a speaker`);
     if (r.speaker && dlg && !dlg.chars.has(r.speaker)) missing("npc.speaker", `${p}.speaker`, "dialogue", `ผู้พูดในบท ${m.dialogue.main}`, `Speaker in ${m.dialogue.main}`, r.speaker, dlg.chars.keys());
     if (r.role === "shop" && !r.shop) err("npc.shop", p, `NPC ร้านค้า "${who}" ต้องระบุ shop`, `shop NPC "${who}" needs a shop`);

@@ -1,0 +1,53 @@
+{
+  "format": "easybattle/1",
+  "id": "tung_sadao",
+  "encounters": [
+    {
+      "id": "tung_sadao_fields",
+      "name": {
+        "th": "ทุ่งนาบ้านทุ่งสะเดา",
+        "en": "Thung Sadao rice fields",
+        "ms": "Sawah Thung Sadao"
+      },
+      "cultures": [
+        "thai"
+      ],
+      "terrains": [
+        "grass",
+        "field",
+        "road"
+      ],
+      "rate": 24,
+      "groups": [
+        {
+          "enemies": [
+            "paddy_crab",
+            "paddy_crab"
+          ],
+          "weight": 4
+        },
+        {
+          "enemies": [
+            "giant_mosquito",
+            "paddy_crab"
+          ],
+          "weight": 3
+        },
+        {
+          "enemies": [
+            "monkey_thief"
+          ],
+          "weight": 2
+        },
+        {
+          "enemies": [
+            "fighting_rooster",
+            "giant_mosquito"
+          ],
+          "weight": 2
+        }
+      ],
+      "music": "market_chase"
+    }
+  ]
+}
