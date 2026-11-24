@@ -51,7 +51,8 @@ const readJsonFile = async <T>(f: string): Promise<T | null> => {
 };
 
 /** Absolute path of `rel` inside `base`, or null when it escapes. */
-export function inside(base: string, rel: string): string | null {
+export function inside(baseIn: string, rel: string): string | null {
+  const base = path.resolve(baseIn);
   const file = path.resolve(base, rel);
   return file === base || file.startsWith(base + path.sep) ? file : null;
 }
