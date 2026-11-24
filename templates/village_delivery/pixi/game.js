@@ -310,6 +310,13 @@ export async function startGame(PIXI, mount) {
     if (name === "changed" || name === "step_completed" || name === "quest_completed") refreshHud();
   });
 
+  // the main quest's delivery stops (kit.json "deliveries", else village_delivery's three)
+  const deliveries = kit.deliveries ?? [
+    { speaker: "monk", step: "temple", item: "sticky_rice" },
+    { speaker: "farmer", step: "farm", item: "morning_glory" },
+    { speaker: "elder", step: "elder", item: "balm" },
+  ];
+
   function segmentFor(speaker) {
     const st = manager.status(q);
     const step = manager.currentStep(q)?.id ?? "";
@@ -317,9 +324,7 @@ export async function startGame(PIXI, mount) {
       if (st === "available" || st === "locked" || (st === "active" && step === "accept")) return "market";
       if (st === "completed" && !state.flags.ending_seen) return "ending";
     }
-    if (speaker === "monk" && st === "active" && step === "temple") return "temple";
-    if (speaker === "farmer" && st === "active" && step === "farm") return "farm";
-    if (speaker === "elder" && st === "active" && step === "elder") return "elder";
+    if (st === "active" && deliveries.some((d) => d.speaker === speaker && d.step === step)) return step;
     return "";
   }
 
@@ -327,7 +332,10 @@ export async function startGame(PIXI, mount) {
     const st = manager.status(q);
     if (st === "completed") return state.flags.ending_seen ? "" : npcFor("vendor");
     if (st !== "active") return npcFor("vendor");
-    return { accept: npcFor("vendor"), temple: npcFor("monk"), farm: npcFor("farmer"), elder: npcFor("elder") }[manager.currentStep(q)?.id] ?? "";
+    const step = manager.currentStep(q)?.id;
+    if (step === "accept") return npcFor("vendor");
+    const d = deliveries.find((x) => x.step === step);
+    return d ? npcFor(d.speaker) : "";
   }
 
   let marker = null;
@@ -560,7 +568,7 @@ export async function startGame(PIXI, mount) {
       quests: { active, done, steps, vars },
       items: { inventory: structuredClone(inv.state), quest_items: qs.items, seen: qs.seen, status, npc: npcRt ? { day: clock.day, minute: clock.minute, bonds: structuredClone(clock.bonds) } : {}, battle: eb ? structuredClone(battle) : {} },
       flags: { ...state.flags },
-      deliveries: [["monk", "sticky_rice", "temple"], ["farmer", "morning_glory", "farm"], ["elder", "balm", "elder"]].map(([to, item, step]) => ({ to, item, done: manager.stepDone(q, step) })),
+      deliveries: deliveries.map((d) => ({ to: d.speaker, item: d.item, done: manager.stepDone(q, d.step) })),
       settings: { locale: i18n.locale },
       stats: { playtime: Math.floor(state.playtime), max_money: state.maxMoney, saves: state.saves },
     };

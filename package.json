@@ -4,11 +4,14 @@
   "description": "Easy Kit: one CLI, one MCP server and one dashboard over the 12 Easy tools. `easykit new <Name> --template village_delivery` scaffolds a playable Godot 4.3+ / PixiJS village game (walkable map, NPC dialogue, quest, shop, cutscene, music, FX, saving, Thai / English / Malay) built entirely from Easy Sprite, Scene, Tilemap, Dialogue, Quest, UI, SFX, FX, Music, Anim, Items and Save output",
   "type": "module",
   "bin": {
-    "easykit": "./dist/cli.js"
+    "easykit": "./dist/cli.js",
+    "easy": "./dist/cli.js"
   },
   "files": [
     "dist",
     "templates",
+    "schema",
+    "examples",
     "web/dist",
     "README.md",
     "CREDITS.md",
@@ -30,7 +33,8 @@
     "smoke": "npm run smoke:tools && npm run smoke:cli",
     "preview": "node scripts/make-preview.mjs",
     "check:web": "python3 scripts/check-web.py",
-    "check": "tsx src/cli.ts check"
+    "check": "tsx src/cli.ts check",
+    "schema": "tsx scripts/gen-schema.ts"
   },
   "engines": {
     "node": ">=20"

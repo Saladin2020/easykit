@@ -144,10 +144,14 @@ VillageDemo/
 
 ## CLI
 
+`easy` and `easykit` are the same binary.
+
 | Command | |
 |---|---|
 | `easykit new <Name> [--template village_delivery] [--engine godot\|pixi\|both] [--seed N] [--dir D] [--force] [--json]` | Scaffold a game with the 12 core tools + the optional ones installed |
-| `easykit build <project> [--engine …] [--font <id>]` | Re-assemble `godot/` and `web/` from the exports in `.easy/`; the project keeps its pixel font, `--font makham-16` opts in to another |
+| `easy init [dir] [--from <project>] [--name N] [--force]` | Write `game.easy.json` for a new game, or describing an existing Easy Kit project |
+| `easy validate [project] [--no-prepare] [--json]` | Schema + every cross-reference (quest items, NPC portraits, battle enemies, dialogue speakers, halal stalls…), errors in Thai and English |
+| `easy build [project] [--engine …] [--force] [--only items,save] [--ship] [--json]` | With `game.easy.json`: run every tool in dependency order, skip unchanged steps, assemble Godot / Pixi, write `BUILD-REPORT.md` ([docs/GAME-MANIFEST.md](docs/GAME-MANIFEST.md)). Without it: re-assemble `godot/` and `web/` from `.easy/` (`--font makham-16` opts in to another font) |
 | `easykit check <project> [--no-godot] [--no-web] [--shots DIR] [--frames]` | Godot import (retried once if the first headless pass flakes; under xvfb + opengl3) + headless test, web check in headless Chrome, screenshots / GIF frames |
 | `easykit doctor [--json]` | Installed tools, versions, git commit, build state; Godot, Chrome, xvfb |
 | `easykit status [path]` | One project or every project in a folder |

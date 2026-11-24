@@ -6,6 +6,7 @@ import { copyTree, exists, readJson, rng, writeJson } from "./fsutil.js";
 import { ToolMcp, runCli, type ToolEnv } from "./runner.js";
 import { BUILD_IDS, CORE_TOOL_IDS, TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
 import { doctor } from "./doctor.js";
+import { MANIFEST_FILE, templateToManifest } from "./manifest.js";
 
 export const TEMPLATES = ["village_delivery"] as const;
 export type TemplateId = (typeof TEMPLATES)[number];
@@ -29,16 +30,20 @@ export interface Template {
   palette: string[];
   sprite: { player: string; cast: CastMember[]; side: CastMember[] };
   scene: { id: string; cameraRange: [number, number]; actor: string };
-  tilemap: { map: string };
+  /** remove: map characters taken off the map (e.g. to replace one with a new cast member). */
+  tilemap: { map: string; remove?: string[] };
   dialogue: { id: string; style: string; segments: string[] };
   quest: { id: string; main: string };
+  /** The main quest's delivery stops: talk to `speaker` during step `step` (also the dialogue segment) to hand over `item`. Default: DEFAULT_DELIVERIES. */
+  deliveries?: Delivery[];
   ui: { doc: string; theme: string };
   sfx: { bank: string; seeded: Array<{ id: string; preset: string }> };
   fx: { seeded: Array<{ id: string; from: string }>; export: string[] };
   music: { seeded: Array<{ id: string; from: string }>; export: string[]; world: string; shop: string };
   anim: { cutscene: string };
   items: { shop: string };
-  save: { schema: string };
+  /** gameStringsOnly: drop Easy Save's sample dialogue / quest sources and unused kit NPC strings, so the string tables hold this game's text only. */
+  save: { schema: string; gameStringsOnly?: boolean };
   npcs: Record<string, { role: "quest" | "shop" | "bark"; speaker?: string; shop?: string }>;
   /** Easy Portrait: town_* sets rebuilt from the generated cast (replace Easy Dialogue's samples); keep = sample ids kept. */
   portrait?: { sets: Array<{ id: string; from: string; th: string; en: string; ms: string }>; keep?: string[] };
@@ -47,7 +52,27 @@ export interface Template {
   /** Easy Font ids for the HUD, small text and the dialogue box. */
   font?: { hud: string; small: string; dialogue: string };
   /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
-  battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number };
+  battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number; screen?: BattleScreen };
+}
+
+export interface Delivery {
+  speaker: string;
+  step: string;
+  item: string;
+}
+/** village_delivery's three stops (what games made before deliveries were configurable play). */
+export const DEFAULT_DELIVERIES: Delivery[] = [
+  { speaker: "monk", step: "temple", item: "sticky_rice" },
+  { speaker: "farmer", step: "farm", item: "morning_glory" },
+  { speaker: "elder", step: "elder", item: "balm" },
+];
+
+/** Easy Battle screen settings (written into the battle workspace as a `ui` document). */
+export interface BattleScreen {
+  timing?: "turn" | "atb";
+  atbMode?: "wait" | "active";
+  layout?: "classic" | "backview";
+  status?: "rows" | "cards" | "none";
 }
 
 export function templateDir(id: string): string {
@@ -147,15 +172,17 @@ export const STEP_TITLES: Record<ToolId, string> = {
 
 const cli = (c: Ctx, tool: ToolId, args: string[], workspaceFlag = true) => runCli(tool, c.env(tool), args, { workspaceFlag });
 
-async function initTool(c: Ctx, tool: ToolId): Promise<void> {
+export async function initTool(c: Ctx, tool: ToolId): Promise<void> {
+  // Rebuilds keep an initialised workspace as it is (its documents may have been edited); init only fills new ones.
+  if ((await readdir(c.ws(tool)).catch(() => [] as string[])).some((f) => f !== "exports")) return;
   await mkdir(c.ws(tool), { recursive: true });
   // Easy Sprite's init works on the current folder; the others take --workspace.
   await cli(c, tool, ["init"], tool !== "sprite");
 }
 
-type StepFn = (c: Ctx, notes: string[]) => Promise<string[]>;
+export type StepFn = (c: Ctx, notes: string[]) => Promise<string[]>;
 
-const STEPS: Record<ToolId, StepFn> = {
+export const STEPS: Record<ToolId, StepFn> = {
   async sprite(c, notes) {
     await initTool(c, "sprite");
     const ws = c.ws("sprite");
@@ -202,7 +229,15 @@ const STEPS: Record<ToolId, StepFn> = {
     await initTool(c, "tilemap");
     const ws = c.ws("tilemap");
     const map = c.tpl.tilemap.map;
-    const doc = await readJson<{ characters: Array<{ name: string; x: number; y: number; facing?: string; anim?: string; patrol?: { path: number[][]; speed: number } }> }>(path.join(ws, "maps", `${map}.json`));
+    const mapFile = path.join(ws, "maps", `${map}.json`);
+    const doc = await readJson<{ characters: Array<{ name: string; x: number; y: number; facing?: string; anim?: string; patrol?: { path: number[][]; speed: number } }> }>(mapFile);
+    const remove = new Set(c.tpl.tilemap.remove ?? []);
+    if (remove.size) {
+      const before = doc.characters.length;
+      doc.characters = doc.characters.filter((ch) => !remove.has(ch.name));
+      await writeJson(mapFile, doc);
+      notes.push(`removed ${before - doc.characters.length} map character(s): ${[...remove].join(", ")}`);
+    }
     for (const m of c.tpl.sprite.cast) {
       for (const ext of ["png", "json"]) await copyFile(path.join(c.assets, "sprites", `${m.id}.${ext}`), path.join(ws, "characters", `kit_${m.id}.${ext}`));
       const prev = doc.characters.find((ch) => ch.name === (m.map ?? m.id));
@@ -255,6 +290,8 @@ const STEPS: Record<ToolId, StepFn> = {
       await cli(c, "portrait", ["from-sprite", `kit_${set.from}`, "--id", set.id, "--th", set.th, "--en", set.en, "--ms", set.ms]);
     }
     const ids = [...spec.sets.map((s) => s.id), ...(spec.keep ?? [])].join(",");
+    // exports are rewritten from scratch so a portrait dropped from the sets / keep list does not linger
+    for (const d of ["kit-dialogue-portraits", "easyportrait-godot", "easyportrait-pixi"]) await rm(path.join(ws, "exports", d), { recursive: true, force: true });
     await cli(c, "portrait", ["export", "--preset", "dialogue", "--ids", ids, "--out", path.join(ws, "exports", "kit-dialogue-portraits")]);
     await cli(c, "portrait", ["export", "--preset", "godot", "--ids", ids]);
     await cli(c, "portrait", ["export", "--preset", "pixi", "--ids", ids]);
@@ -291,6 +328,12 @@ const STEPS: Record<ToolId, StepFn> = {
       const src = path.join(c.assets, "sprites", "side", `${sheet}.png`);
       if (await exists(src)) await copyFile(src, path.join(ws, "sprites", `${hero}.png`));
     }
+    if (b.screen) {
+      // battle screen (turn / ATB, classic / backview) as an Easy Battle ui document; later documents win
+      const ui = Object.fromEntries(Object.entries(b.screen).filter(([, v]) => v !== undefined));
+      await writeJson(path.join(ws, "battles", "zz_kit_screen.easybattle.json"), { format: "easybattle/1", id: "zz_kit_screen", ui });
+      notes.push(`screen: ${Object.entries(ui).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+    }
     await cli(c, "battle", ["check"]);
     await cli(c, "battle", ["export", "--preset", "godot"]);
     await cli(c, "battle", ["export", "--preset", "pixi"]);
@@ -304,6 +347,13 @@ const STEPS: Record<ToolId, StepFn> = {
 
   async quest(c) {
     await initTool(c, "quest");
+    // the quest links to this game's dialogue (speakers, segments), not Easy Quest's sample copy
+    const dlg = c.tpl.dialogue.id;
+    for (const [from, to] of [
+      [path.join(c.ws("dialogue"), "dialogues", `${dlg}.ezd`), `${dlg}.ezd`],
+      [path.join(c.ws("dialogue"), "exports", `${dlg}-json`, `${dlg}.dialogue.json`), `${dlg}.dialogue.json`],
+    ] as const)
+      if (await exists(from)) await copyFile(from, path.join(c.ws("quest"), "dialogues", to));
     await cli(c, "quest", ["export", c.tpl.quest.id, "--preset", "all"]);
     return [`.easy/quest/exports/${c.tpl.quest.id}-godot`, `.easy/quest/exports/${c.tpl.quest.id}-pixi`];
   },
@@ -373,21 +423,32 @@ const STEPS: Record<ToolId, StepFn> = {
       [src("quest", `quests/${c.tpl.quest.id}.ezq`), `sources/quests/${c.tpl.quest.id}.ezq`],
       [src("ui", `screens/${c.tpl.ui.doc}.easyui.json`), `sources/ui/${c.tpl.ui.doc}.easyui.json`],
     ];
+    if (c.tpl.save.gameStringsOnly) {
+      const keep = new Set(pairs.map(([, to]) => path.normalize(to)));
+      for (const sub of ["sources/dialogues", "sources/quests"])
+        for (const f of await readdir(path.join(ws, sub)).catch(() => [] as string[])) if (!keep.has(path.normalize(`${sub}/${f}`))) await rm(path.join(ws, sub, f), { force: true });
+    }
     for (const [from, to] of pairs) if (await exists(from)) await copyFile(from, path.join(ws, to));
     for (const f of await readdir(path.join(c.ws("items"), "items")).catch(() => [] as string[])) if (f.endsWith(".easyitems.json")) await copyFile(path.join(c.ws("items"), "items", f), path.join(ws, "sources", "items", f));
     // Kit strings (prompts, NPC names, barks) for th / en / ms.
-    await copyFile(path.join(templateDir(c.tpl.id), "strings", "kit.easyi18n.json"), path.join(ws, "strings", "kit.easyi18n.json"));
+    const kitStrings = await readJson<{ strings: Record<string, unknown> }>(path.join(templateDir(c.tpl.id), "strings", "kit.easyi18n.json"));
+    if (c.tpl.save.gameStringsOnly)
+      for (const k of Object.keys(kitStrings.strings)) {
+        const npc = /^kit\.npc\.([^.]+)\./.exec(k)?.[1];
+        if (npc && !c.tpl.npcs[npc]) delete kitStrings.strings[k];
+      }
+    await writeJson(path.join(ws, "strings", "kit.easyi18n.json"), kitStrings);
     // Sample save files belong to the Easy Save demo, not to a new game.
     await rm(path.join(ws, "saves"), { recursive: true, force: true });
     await mkdir(path.join(ws, "saves"), { recursive: true });
-    await cli(c, "save", ["extract"]);
+    await cli(c, "save", c.tpl.save.gameStringsOnly ? ["extract", "--prune"] : ["extract"]);
     await cli(c, "save", ["export", "--preset", "all"]);
     notes.push("sources re-extracted from this project's dialogue / quest / ui / items docs; kit table added");
     return [".easy/save/exports/easysave-godot", ".easy/save/exports/easysave-web", ".easy/save/exports/easysave-strings"];
   },
 };
 
-function makeCtx(o: { root: string; name: string; seed: number; engine: Engine; tpl: Template; tools: Record<ToolId, ResolvedTool>; log: (l: string) => void; choices?: Record<string, unknown> }): Ctx {
+export function makeCtx(o: { root: string; name: string; seed: number; engine: Engine; tpl: Template; tools: Record<ToolId, ResolvedTool>; log: (l: string) => void; choices?: Record<string, unknown> }): Ctx {
   return {
     root: o.root,
     name: o.name,
@@ -526,6 +587,9 @@ export async function newProject(opts: NewProjectOptions): Promise<ProjectManife
   }
   manifest.ok = manifest.steps.every((s) => s.ok);
   await writeJson(path.join(root, "easykit.project.json"), manifest);
+  // the same game as a game.easy.json manifest, for `easy build`
+  const gm = templateToManifest(tpl, { name: opts.name, engine, seed, font: tpl.font?.dialogue, ship: { targets: ["web"], release: "0.1.0" } });
+  await writeJson(path.join(root, MANIFEST_FILE), gm);
   await writeProjectReadme(ctx, manifest);
   await writeFile(path.join(root, ".gitignore"), ".easy/*/exports/\n.easy/*/node_modules/\ngodot/.godot/\n*.import\n");
   return manifest;

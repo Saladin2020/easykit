@@ -460,16 +460,20 @@ func quest_target() -> String:
 		return "" if flags.get("ending_seen", false) else _npc_for("vendor")
 	if st != "active":
 		return _npc_for("vendor")
-	match str(QuestManager.current_step(q).get("id", "")):
-		"accept":
-			return _npc_for("vendor")
-		"temple":
-			return _npc_for("monk")
-		"farm":
-			return _npc_for("farmer")
-		"elder":
-			return _npc_for("elder")
+	var step := str(QuestManager.current_step(q).get("id", ""))
+	if step == "accept":
+		return _npc_for("vendor")
+	for d in deliveries():
+		if str(d["step"]) == step:
+			return _npc_for(str(d["speaker"]))
 	return ""
+
+
+## The main quest's delivery stops ({speaker, step, item}); kit.json "deliveries", else village_delivery's three.
+func deliveries() -> Array:
+	if kit.has("deliveries"):
+		return kit["deliveries"]
+	return [{"speaker": "monk", "step": "temple", "item": "sticky_rice"}, {"speaker": "farmer", "step": "farm", "item": "morning_glory"}, {"speaker": "elder", "step": "elder", "item": "balm"}]
 
 
 func _npc_for(speaker: String) -> String:
@@ -509,15 +513,10 @@ func segment_for(speaker: String) -> String:
 				return "market"
 			if st == "completed" and not flags.get("ending_seen", false):
 				return "ending"
-		"monk":
-			if st == "active" and step == "temple":
-				return "temple"
-		"farmer":
-			if st == "active" and step == "farm":
-				return "farm"
-		"elder":
-			if st == "active" and step == "elder":
-				return "elder"
+	if st == "active":
+		for d in deliveries():
+			if str(d["speaker"]) == speaker and str(d["step"]) == step:
+				return step
 	return ""
 
 
@@ -748,9 +747,9 @@ func build_save() -> Dictionary:
 		if typeof(v) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
 			vars[k] = v
 	var q: String = kit["quest"]["main"]
-	var deliveries: Array = []
-	for d in [["monk", "sticky_rice", "temple"], ["farmer", "morning_glory", "farm"], ["elder", "balm", "elder"]]:
-		deliveries.append({"to": d[0], "item": d[1], "done": QuestManager.step_done(q, d[2])})
+	var drops: Array = []
+	for d in deliveries():
+		drops.append({"to": d["speaker"], "item": d["item"], "done": QuestManager.step_done(q, str(d["step"]))})
 	var face := {"front": "down", "back": "up", "left": "left", "right": "right"}
 	return {
 		"player": {"name": I18n.t("dlg.%s.char.kid" % kit["dialogue"]["id"]).left(16), "money": int(Items.state.get("coins", 0)), "scene": _spawn_near(), "pos": {"x": player.position.x, "y": player.position.y}, "facing": face.get(facing, "down"), "bike": "none"},
@@ -759,7 +758,7 @@ func build_save() -> Dictionary:
 		"quests": {"active": active, "done": done, "steps": steps, "vars": vars},
 		"items": {"inventory": Items.to_dict(), "quest_items": qs["items"], "seen": qs["seen"], "status": status, "npc": NPCS.to_dict() if feat.get("npc", false) else {}, "battle": BATTLE.to_dict() if feat.get("battle", false) else {}},
 		"flags": flags.duplicate(),
-		"deliveries": deliveries,
+		"deliveries": drops,
 		"settings": {"locale": I18n.get_locale()},
 		"stats": {"playtime": int(playtime), "max_money": _max_money, "saves": _saves},
 	}

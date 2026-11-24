@@ -1,0 +1,369 @@
+{
+  "$schema": "../../schema/game.easy.schema.json",
+  "format": "easy-game/1",
+  "game": {
+    "name": "TungSadao",
+    "title": {
+      "th": "ตลาดเช้าบ้านทุ่งสะเดา",
+      "en": "Morning Market of Ban Thung Sadao",
+      "ms": "Pasar Pagi Ban Thung Sadao"
+    },
+    "setting": {
+      "th": "บ้านทุ่งสะเดา ตำบลนาหว้า",
+      "en": "Ban Thung Sadao, Na Wa subdistrict",
+      "ms": "Ban Thung Sadao"
+    },
+    "engine": "both",
+    "font": "makham-16",
+    "seed": 7,
+    "viewport": {
+      "width": 480,
+      "height": 270
+    },
+    "base": "village_delivery"
+  },
+  "sprites": {
+    "player": "ton",
+    "palette": [
+      "#3a7bd5",
+      "#d9534f",
+      "#2e9e6a",
+      "#e0a526",
+      "#8e5bc4",
+      "#e07b39",
+      "#2aa8b8",
+      "#c2477a"
+    ],
+    "cast": [
+      {
+        "id": "ton",
+        "base": "little_boy",
+        "recolor": "shirt",
+        "map": "ton"
+      },
+      {
+        "id": "pa_daeng",
+        "base": "market_seller",
+        "map": "pa_daeng"
+      },
+      {
+        "id": "bang_roti",
+        "base": "roti_seller",
+        "map": "bang_roti"
+      },
+      {
+        "id": "kak_fatimah",
+        "base": "hijab_teacher",
+        "map": "kak_fatimah"
+      },
+      {
+        "id": "adam",
+        "base": "kopiah_boy",
+        "map": "adam"
+      },
+      {
+        "id": "pak_cik_ismail",
+        "base": "pak_cik_jubah",
+        "map": "pak_cik_ismail"
+      },
+      {
+        "id": "ta_poem",
+        "base": "grandpa",
+        "map": "ta_poem"
+      },
+      {
+        "id": "lung_mee",
+        "base": "village_farmer",
+        "map": "lung_mee",
+        "at": [
+          38,
+          7.5
+        ],
+        "facing": "front"
+      },
+      {
+        "id": "kru_somjai",
+        "base": "teacher",
+        "at": [
+          9,
+          10
+        ],
+        "facing": "front"
+      }
+    ],
+    "side": [
+      {
+        "id": "side_little_boy",
+        "base": "side_little_boy",
+        "recolor": "shirt"
+      },
+      {
+        "id": "side_market_seller",
+        "base": "side_market_seller"
+      },
+      {
+        "id": "side_hijab_teacher",
+        "base": "side_hijab_teacher"
+      },
+      {
+        "id": "side_grandma",
+        "base": "side_grandma"
+      }
+    ]
+  },
+  "portraits": {
+    "sets": [
+      {
+        "id": "town_kid",
+        "from": "ton",
+        "th": "ต้น",
+        "en": "Ton",
+        "ms": "Ton"
+      },
+      {
+        "id": "town_vendor",
+        "from": "pa_daeng",
+        "th": "ป้าแดง",
+        "en": "Auntie Daeng",
+        "ms": "Mak Cik Daeng"
+      },
+      {
+        "id": "town_farmer",
+        "from": "lung_mee",
+        "th": "ลุงมี",
+        "en": "Uncle Mee",
+        "ms": "Pak Cik Mee"
+      },
+      {
+        "id": "town_elder",
+        "from": "ta_poem",
+        "th": "ตาเพิ่ม",
+        "en": "Grandpa Poem",
+        "ms": "Tok Poem"
+      },
+      {
+        "id": "town_teacher",
+        "from": "kru_somjai",
+        "th": "ครูสมใจ",
+        "en": "Teacher Somjai",
+        "ms": "Cikgu Somjai"
+      }
+    ],
+    "keep": []
+  },
+  "scenes": {
+    "title": {
+      "id": "harmony_town",
+      "cameraRange": [
+        380,
+        900
+      ],
+      "actor": "side_little_boy"
+    }
+  },
+  "tilemaps": {
+    "main": "multicultural_village",
+    "remove": [
+      "luang_phi"
+    ]
+  },
+  "npcs": {
+    "roles": {
+      "pa_daeng": {
+        "speaker": "vendor",
+        "role": "quest"
+      },
+      "kru_somjai": {
+        "role": "quest",
+        "speaker": "teacher"
+      },
+      "lung_mee": {
+        "speaker": "farmer",
+        "role": "quest"
+      },
+      "ta_poem": {
+        "speaker": "elder",
+        "role": "quest"
+      },
+      "bang_roti": {
+        "role": "shop",
+        "shop": "halal_stall"
+      },
+      "kak_fatimah": {
+        "role": "bark"
+      },
+      "adam": {
+        "role": "bark"
+      },
+      "pak_cik_ismail": {
+        "role": "bark"
+      },
+      "aisyah": {
+        "role": "bark"
+      },
+      "pak_hamid": {
+        "role": "bark"
+      }
+    },
+    "schedules": {
+      "kak_fatimah": "fatimah",
+      "adam": "adam",
+      "pak_cik_ismail": "pakcik",
+      "aisyah": "aisyah",
+      "pak_hamid": "hamid"
+    },
+    "start": "07:00",
+    "secondsPerMinute": 0.5,
+    "sources": [
+      "content/npc/village.easynpc.json"
+    ]
+  },
+  "dialogue": {
+    "main": "village_delivery",
+    "style": "teak",
+    "segments": [
+      "market",
+      "refuse",
+      "hall",
+      "farm",
+      "elder",
+      "ending"
+    ],
+    "sources": [
+      "content/dialogue/village_delivery.ezd"
+    ]
+  },
+  "quests": {
+    "main": "village_delivery",
+    "deliveries": [
+      {
+        "speaker": "teacher",
+        "step": "hall",
+        "item": "sticky_rice"
+      },
+      {
+        "speaker": "farmer",
+        "step": "farm",
+        "item": "morning_glory"
+      },
+      {
+        "speaker": "elder",
+        "step": "elder",
+        "item": "balm"
+      }
+    ],
+    "sources": [
+      "content/quest/village_delivery.ezq"
+    ]
+  },
+  "items": {
+    "shop": "halal_stall",
+    "halalShops": [
+      "halal_stall",
+      "raya_bazaar"
+    ],
+    "sources": [
+      "content/items/*.easyitems.json"
+    ]
+  },
+  "battle": {
+    "table": "tung_sadao_fields",
+    "zone": [
+      37,
+      1,
+      43,
+      7
+    ],
+    "culture": "thai",
+    "ground": "C",
+    "party": [
+      {
+        "id": "ton",
+        "level": 3
+      },
+      {
+        "id": "adam",
+        "level": 3
+      }
+    ],
+    "heroSheets": {
+      "ton": "side_little_boy"
+    },
+    "firstSeed": 7,
+    "timing": "atb",
+    "atbMode": "wait",
+    "layout": "classic",
+    "enemies": [
+      "paddy_crab",
+      "giant_mosquito",
+      "monkey_thief",
+      "fighting_rooster"
+    ],
+    "status": "cards",
+    "sources": [
+      "content/battle/*.easybattle.json"
+    ]
+  },
+  "ui": {
+    "screen": "village",
+    "theme": "teak"
+  },
+  "fx": {
+    "seeded": [
+      {
+        "id": "coin_burst",
+        "from": "coin_burst"
+      }
+    ],
+    "export": [
+      "coin_burst",
+      "level_up",
+      "sparkle_shine",
+      "confetti",
+      "footstep_dust",
+      "heal_plus",
+      "fireflies",
+      "lantern_glow"
+    ]
+  },
+  "sfx": {
+    "bank": "village",
+    "seeded": [
+      {
+        "id": "coin",
+        "preset": "coin"
+      }
+    ]
+  },
+  "music": {
+    "seeded": [
+      {
+        "id": "village_day",
+        "from": "village_day"
+      }
+    ],
+    "export": [
+      "village_day",
+      "shop_theme"
+    ],
+    "world": "village_day",
+    "shop": "shop_theme"
+  },
+  "anim": {
+    "cutscene": "village_morning_delivery"
+  },
+  "save": {
+    "schema": "village_delivery",
+    "gameStringsOnly": true,
+    "sources": [
+      "content/save/*.easyi18n.json"
+    ]
+  },
+  "ship": {
+    "targets": [
+      "web",
+      "linux"
+    ],
+    "release": "0.1.0"
+  }
+}
