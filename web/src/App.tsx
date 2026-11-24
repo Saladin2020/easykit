@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { LangProvider, LangToggle, useLang } from "./studio/i18n";
+import { ProjectList, ProjectView } from "./studio/Studio";
+import { studio, type StudioInfo } from "./studio/api";
 import { createProject, fetchDoctor, fetchProjects, fetchTemplates, type DoctorReport, type ProjectInfo, type StepResult, type TemplateInfo } from "./api";
 
 const fail = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -166,7 +169,7 @@ function Projects({ root, projects }: { root: string; projects: ProjectInfo[] })
   );
 }
 
-export function App() {
+function KitPage() {
   const [report, setReport] = useState<DoctorReport | null>(null);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [projects, setProjects] = useState<{ root: string; projects: ProjectInfo[] }>({ root: "", projects: [] });
@@ -184,26 +187,69 @@ export function App() {
     fetchTemplates().then(setTemplates, (e) => setStatus(fail(e)));
   }, [loadDoctor, loadProjects]);
   return (
+    <main className="layout">
+      {status ? <div className="status">{status}</div> : null}
+      <div className="col">
+        <NewProject templates={templates} onCreated={loadProjects} />
+        <Projects root={projects.root} projects={projects.projects} />
+      </div>
+      <ToolsPanel report={report} onRefresh={loadDoctor} />
+    </main>
+  );
+}
+
+function useHash(): string {
+  const [h, setH] = useState(() => window.location.hash || "#/studio");
+  useEffect(() => {
+    const on = () => setH(window.location.hash || "#/studio");
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+  return h;
+}
+
+function Shell() {
+  const { t } = useLang();
+  const hash = useHash();
+  const [info, setInfo] = useState<StudioInfo | null>(null);
+  useEffect(() => {
+    studio.info().then(setInfo, () => undefined);
+  }, []);
+  const parts = hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  const kit = parts[0] === "kit";
+  const dir = !kit && parts[1] ? parts[1] : null;
+  const tab = (["edit", "build", "preview", "ship"].includes(parts[2] ?? "") ? parts[2] : "edit") as "edit" | "build" | "preview" | "ship";
+  return (
     <>
       <header className="topbar">
-        <div className="brand-block">
+        <a className="brand-block" href="#/studio">
           <div className="brand-mark" />
           <div>
             <h1 className="brand">
-              Easy <span>Kit</span>
+              Easy <span>Studio</span>
             </h1>
-            <p className="brand-th">สร้างเกมทั้งเกมจากชุดเครื่องมือ Easy ในคำสั่งเดียว</p>
+            <p className="brand-th">{t("tagline")}</p>
           </div>
-        </div>
-        <div className="status">{status}</div>
+        </a>
+        <nav className="main-nav">
+          <a href="#/studio" className={kit ? "" : "on"}>
+            {t("studio")}
+          </a>
+          <a href="#/kit" className={kit ? "on" : ""}>
+            {t("kit")}
+          </a>
+        </nav>
+        <LangToggle />
       </header>
-      <main className="layout">
-        <div className="col">
-          <NewProject templates={templates} onCreated={loadProjects} />
-          <Projects root={projects.root} projects={projects.projects} />
-        </div>
-        <ToolsPanel report={report} onRefresh={loadDoctor} />
-      </main>
+      {kit ? <KitPage /> : dir ? <ProjectView key={dir} dir={dir} tab={tab} info={info} /> : <ProjectList info={info} />}
     </>
+  );
+}
+
+export function App() {
+  return (
+    <LangProvider>
+      <Shell />
+    </LangProvider>
   );
 }

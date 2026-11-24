@@ -67,6 +67,8 @@ export interface KitConfig {
   tools?: Partial<Record<ToolId, string>>;
   /** Godot 4.3+ binary. */
   godot?: string;
+  /** Aseprite binary (Studio's "open in Aseprite"). */
+  aseprite?: string;
   /** Chrome / Chromium binary (headless checks). */
   chrome?: string;
 }

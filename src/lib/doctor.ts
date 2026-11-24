@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { TOOLS, TOOL_IDS, cliPath, loadKitConfig, mcpServerPath, resolveAll, type KitConfig, type ToolId } from "./tools.js";
 
@@ -24,6 +24,7 @@ export interface EngineReport {
   node: string;
   godot: { path: string | null; version: string | null };
   chrome: { path: string | null };
+  aseprite: { path: string | null };
   xvfb: boolean;
 }
 
@@ -45,22 +46,47 @@ function git(home: string): ToolReport["git"] {
   }
 }
 
-function which(bin: string): string | null {
-  try {
-    return execFileSync("sh", ["-c", `command -v ${bin}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
-  } catch {
-    return null;
-  }
+/** First `bin` on PATH (Windows: also tries PATHEXT extensions). Pure Node, no shell. */
+export function which(bin: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const win = process.platform === "win32";
+  const exts = win ? ["", ...(env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";").map((e) => e.toLowerCase())] : [""];
+  for (const dir of (env.PATH ?? env.Path ?? "").split(path.delimiter).filter(Boolean))
+    for (const ext of exts) {
+      const p = path.join(dir, bin + ext);
+      try {
+        if (existsSync(p) && statSync(p).isFile()) return p;
+      } catch {
+        /* unreadable PATH entry */
+      }
+    }
+  return null;
+}
+
+/** Well-known install locations (checked after env / config / PATH). */
+const GODOT_DEFAULTS = ["C:\\ProgramData\\chocolatey\\bin\\godot.exe", "C:\\Program Files\\Godot\\godot.exe", "/Applications/Godot.app/Contents/MacOS/Godot"];
+const CHROME_DEFAULTS = ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"];
+const ASEPRITE_DEFAULTS = [
+  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Aseprite\\Aseprite.exe",
+  "C:\\Program Files\\Aseprite\\Aseprite.exe",
+  "/Applications/Aseprite.app/Contents/MacOS/aseprite",
+];
+
+/** Aseprite binary: $ASEPRITE_BIN / $EASYKIT_ASEPRITE → config.aseprite → aseprite on PATH → the usual Windows / macOS installs. */
+export function findAseprite(cfg: KitConfig = loadKitConfig().config, env: NodeJS.ProcessEnv = process.env): string | null {
+  for (const p of [env.ASEPRITE_BIN, env.EASYKIT_ASEPRITE, cfg.aseprite].filter(Boolean) as string[]) if (existsSync(p)) return p;
+  return which("aseprite", env) ?? ASEPRITE_DEFAULTS.find((p) => existsSync(p)) ?? null;
 }
 
 /** Godot binary: $EASYKIT_GODOT / $GODOT → config.godot → godot4 / godot on PATH → <suite>/tools-godot/Godot_v4*. */
 export function findGodot(cfg: KitConfig = loadKitConfig().config, env: NodeJS.ProcessEnv = process.env): string | null {
-  const direct = [env.EASYKIT_GODOT, env.GODOT, cfg.godot].filter(Boolean) as string[];
+  const direct = [env.EASYKIT_GODOT, env.GODOT_BIN, env.GODOT, cfg.godot].filter(Boolean) as string[];
   for (const p of direct) if (existsSync(p)) return p;
   for (const b of ["godot4", "godot"]) {
-    const w = which(b);
+    const w = which(b, env);
     if (w) return w;
   }
+  const known = GODOT_DEFAULTS.find((p) => existsSync(p));
+  if (known) return known;
   const suite = cfg.suiteDir ?? env.EASYKIT_SUITE_DIR ?? "/workspace";
   for (const p of [path.join(suite, "tools-godot", "Godot_v4.3-stable_linux.x86_64"), "/workspace/tools-godot/Godot_v4.3-stable_linux.x86_64"]) if (existsSync(p)) return p;
   return null;
@@ -69,10 +95,10 @@ export function findGodot(cfg: KitConfig = loadKitConfig().config, env: NodeJS.P
 export function findChrome(cfg: KitConfig = loadKitConfig().config, env: NodeJS.ProcessEnv = process.env): string | null {
   for (const p of [env.EASYKIT_CHROME, env.CHROME_PATH, cfg.chrome].filter(Boolean) as string[]) if (existsSync(p)) return p;
   for (const b of ["google-chrome", "chromium", "chromium-browser"]) {
-    const w = which(b);
+    const w = which(b, env);
     if (w) return w;
   }
-  return null;
+  return CHROME_DEFAULTS.find((p) => existsSync(p)) ?? null;
 }
 
 function godotVersion(bin: string | null): string | null {
@@ -108,7 +134,8 @@ export function doctor(opts: { cfg?: KitConfig; configPath?: string | null; env?
     node: process.version,
     godot: { path: godot, version: opts.engines === false ? null : godotVersion(godot) },
     chrome: { path: opts.engines === false ? null : findChrome(loaded.config, opts.env) },
-    xvfb: opts.engines === false ? false : which("xvfb-run") !== null,
+    aseprite: { path: opts.engines === false ? null : findAseprite(loaded.config, opts.env) },
+    xvfb: opts.engines === false ? false : which("xvfb-run", opts.env) !== null,
   };
   const ready = tools.filter((t) => t.installed && t.built && t.deps).length;
   // The first twelve are required; the optional five only count against `ok` when installed but not built.
@@ -128,8 +155,9 @@ export function formatDoctor(r: DoctorReport): string {
     ...rows,
     "",
     `node    ${r.engines.node}`,
-    `godot   ${r.engines.godot.path ? `${r.engines.godot.version ?? "?"}  ${r.engines.godot.path}` : "not found (set EASYKIT_GODOT) — Godot checks skipped"}`,
+    `godot   ${r.engines.godot.path ? `${r.engines.godot.version ?? "?"}  ${r.engines.godot.path}` : "not found (set GODOT_BIN or EASYKIT_GODOT) — Godot checks skipped"}`,
     `chrome  ${r.engines.chrome.path ?? "not found — web screenshot skipped"}`,
+    `aseprite ${r.engines.aseprite.path ?? "not found (optional; set ASEPRITE_BIN)"}`,
     `xvfb    ${r.engines.xvfb ? "yes" : "no"}`,
   ].join("\n");
 }

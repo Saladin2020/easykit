@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { checkGodot, checkWeb, screenshotGodot, type CheckRun } from "./lib/check.js";
@@ -196,6 +197,21 @@ program
   .action(async (o) => {
     const { startServer } = await import("./server/app.js");
     await startServer({ port: Number(o.port), host: o.host, projects: path.resolve(o.projects ?? process.cwd()), dev: !!o.dev });
+  });
+
+program
+  .command("studio")
+  .description(`Easy Studio: local web UI for game.easy.json — edit, validate, build, preview, ship (http://127.0.0.1:${KIT_PORTS.serve}, local only)`)
+  .argument("[projectsDir]", "Folder holding game projects (or one project folder); default: current folder")
+  .option("--port <n>", "Port", String(KIT_PORTS.serve))
+  .option("--open", "Open the browser")
+  .option("--dev", "API only (use the Vite dev server on 5187)")
+  .action(async (dir: string | undefined, o) => {
+    let projects = path.resolve(dir ?? process.cwd());
+    // A single project folder: serve its parent so the project shows up in the list.
+    if (existsSync(path.join(projects, "game.easy.json")) || existsSync(path.join(projects, "easykit.project.json"))) projects = path.dirname(projects);
+    const { startServer } = await import("./server/app.js");
+    await startServer({ port: Number(o.port), host: "127.0.0.1", projects, dev: !!o.dev, studio: true, open: !!o.open });
   });
 
 program

@@ -11,7 +11,7 @@ import { assemblePixi } from "./pixi.js";
 import { readCatalog } from "./catalog.js";
 import { doctor } from "./doctor.js";
 import { exists, readJson, walk, writeJson } from "./fsutil.js";
-import { SOURCE_DIR, loadManifest, manifestToTemplate, type GameManifest, type Issue } from "./manifest.js";
+import { SOURCE_DIR, loadManifest, manifestToTemplate, parseManifest, type GameManifest, type Issue } from "./manifest.js";
 import { STEPS, STEP_TITLES, initTool, loadTemplate, makeCtx, templateDir, type Ctx, type ProjectManifest, type StepResult, type Template } from "./pipeline.js";
 import { shipProject } from "./ship.js";
 import { BUILD_IDS, TOOLS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ToolId } from "./tools.js";
@@ -159,10 +159,13 @@ export interface Prepared {
 }
 
 /** Load + schema-check the manifest, init missing workspaces, copy sources in, then cross-check every id. */
-export async function prepare(root: string, opts: { cfg?: KitConfig; log?: (l: string) => void; init?: boolean; engine?: GameManifest["game"]["engine"]; state?: BuildState } = {}): Promise<{ issues: Issue[]; prepared: Prepared | null }> {
+export async function prepare(
+  root: string,
+  opts: { cfg?: KitConfig; log?: (l: string) => void; init?: boolean; engine?: GameManifest["game"]["engine"]; state?: BuildState; /** validate this (unsaved) manifest instead of the file */ draft?: unknown } = {},
+): Promise<{ issues: Issue[]; prepared: Prepared | null }> {
   root = path.resolve(root);
   const log = opts.log ?? (() => undefined);
-  const loaded = await loadManifest(root);
+  const loaded = opts.draft !== undefined ? parseManifest(opts.draft) : await loadManifest(root);
   if (!loaded.manifest) return { issues: loaded.issues, prepared: null };
   const m = loaded.manifest;
   const tpl = manifestToTemplate(m, await loadTemplate(m.game.base));
@@ -193,7 +196,7 @@ export async function prepare(root: string, opts: { cfg?: KitConfig; log?: (l: s
   return { issues, prepared: { root, manifest: m, tpl, ctx, issues, absent } };
 }
 
-export async function validateProject(root: string, opts: { cfg?: KitConfig; init?: boolean } = {}): Promise<{ ok: boolean; issues: Issue[] }> {
+export async function validateProject(root: string, opts: { cfg?: KitConfig; init?: boolean; draft?: unknown } = {}): Promise<{ ok: boolean; issues: Issue[] }> {
   const { issues } = await prepare(root, opts);
   return { ok: !issues.some((i) => i.severity === "error"), issues };
 }
@@ -213,6 +216,10 @@ export interface BuildOptions {
   only?: ToolId[];
   /** Run Easy Ship (local packaging only) for manifest.ship.targets after assembling. */
   ship?: boolean;
+  /** Called when a step starts running (not for skipped steps). */
+  onStart?: (tool: string, title: string, reason: string) => void;
+  /** Called with every step result as soon as it is known (built / skipped / failed / not-installed). */
+  onStep?: (step: BuildStepReport) => void;
 }
 
 export async function buildProject(rootIn: string, opts: BuildOptions = {}): Promise<BuildReport> {
@@ -238,6 +245,10 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
     await writeJson(path.join(root, ".easy", "build-report.json"), report);
     await writeFile(path.join(root, "BUILD-REPORT.md"), reportMarkdown(report));
     return report;
+  };
+  const pushStep = (st: BuildStepReport) => {
+    report.steps.push(st);
+    opts.onStep?.(st);
   };
   if (!prepared || issues.some((i) => i.severity === "error")) return finish();
 
@@ -267,7 +278,7 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
   for (const tool of order) {
     const title = STEP_TITLES[tool];
     if (prepared.absent.includes(tool)) {
-      report.steps.push({ tool, title, status: "not-installed", reason: `${TOOLS[tool].env}_HOME not set`, ms: 0, outputs: [], notes: [] });
+      pushStep({ tool, title, status: "not-installed", reason: `${TOOLS[tool].env}_HOME not set`, ms: 0, outputs: [], notes: [] });
       continue;
     }
     const hash = sha({
@@ -289,19 +300,20 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
       else if (!(await Promise.all(prev.outputs.map((o) => exists(path.join(root, o))))).every(Boolean)) reason = "outputs missing";
     }
     if (!reason || !selected) {
-      report.steps.push({ tool, title, status: "skipped", reason: selected ? "unchanged" : "not in --only", ms: 0, outputs: prev?.outputs ?? [], notes: prev?.notes ?? [] });
+      pushStep({ tool, title, status: "skipped", reason: selected ? "unchanged" : "not in --only", ms: 0, outputs: prev?.outputs ?? [], notes: prev?.notes ?? [] });
       pm.steps.push({ tool, title, ok: true, ms: 0, outputs: prev?.outputs ?? [], notes: prev?.notes ?? [] });
       settle();
       continue;
     }
     log(`[${TOOLS[tool].name}] ${title} (${reason})…`);
+    opts.onStart?.(tool, title, reason);
     const notes: string[] = [];
     try {
       const outputs = await STEPS[tool](ctx, notes);
       state.steps[tool] = { hash, post: await hashDir(ctx.ws(tool)), outputs, notes };
       state.choices = { ...ctx.choices };
       settle();
-      report.steps.push({ tool, title, status: "built", reason, ms: Date.now() - s0, outputs, notes });
+      pushStep({ tool, title, status: "built", reason, ms: Date.now() - s0, outputs, notes });
       pm.steps.push({ tool, title, ok: true, ms: Date.now() - s0, outputs, notes });
       await writeJson(statePath, state);
     } catch (e) {
@@ -309,7 +321,7 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
       delete state.steps[tool];
       await writeJson(statePath, state);
       const error = `${err.message}${err.detail ? `\n${err.detail}` : ""}`;
-      report.steps.push({ tool, title, status: "failed", reason, ms: Date.now() - s0, outputs: [], notes, error });
+      pushStep({ tool, title, status: "failed", reason, ms: Date.now() - s0, outputs: [], notes, error });
       pm.steps.push({ tool, title, ok: false, ms: Date.now() - s0, outputs: [], notes, error });
       await writeJson(path.join(root, "easykit.project.json"), pm);
       return finish();
@@ -329,13 +341,14 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
     const s0 = Date.now();
     let reason = opts.force ? "--force" : !prev ? "first build" : prev.hash !== hash ? "inputs changed" : !(await exists(marker)) ? "output missing" : "";
     if (!reason && prev) {
-      report.steps.push({ tool: "kit", title, status: "skipped", reason: "unchanged", ms: 0, outputs: [`${dir}/`], notes: [] });
+      pushStep({ tool: "kit", title, status: "skipped", reason: "unchanged", ms: 0, outputs: [`${dir}/`], notes: [] });
       if (engine === "godot") pm.godot = prev.report as ProjectManifest["godot"];
       else pm.web = prev.report as ProjectManifest["web"];
       pm.steps.push({ tool: "kit", title, ok: true, ms: 0, outputs: [`${dir}/`], notes: ["unchanged"] });
       continue;
     }
     log(`[Easy Kit] ${title} (${reason})…`);
+    opts.onStart?.("kit", title, reason);
     // keep Godot's import cache (.godot/) so a rebuild does not re-import every texture
     if (engine === "godot") {
       for (const f of await readdir(path.join(root, dir)).catch(() => [] as string[])) if (f !== ".godot") await rm(path.join(root, dir, f), { recursive: true, force: true });
@@ -345,7 +358,7 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
     else pm.web = r as ProjectManifest["web"];
     state.assemble[engine] = { hash, report: r };
     await writeJson(statePath, state);
-    report.steps.push({ tool: "kit", title, status: "built", reason, ms: Date.now() - s0, outputs: [`${dir}/`], notes: [`${r.files} files`] });
+    pushStep({ tool: "kit", title, status: "built", reason, ms: Date.now() - s0, outputs: [`${dir}/`], notes: [`${r.files} files`] });
     pm.steps.push({ tool: "kit", title, ok: true, ms: Date.now() - s0, outputs: [`${dir}/`], notes: [`${r.files} files`] });
   }
   pm.choices = ctx.choices;
@@ -355,11 +368,12 @@ export async function buildProject(rootIn: string, opts: BuildOptions = {}): Pro
 
   if (opts.ship && m.ship && !prepared.absent.includes("ship")) {
     const s0 = Date.now();
+    opts.onStart?.("ship", "package releases (local only, never uploads)", "--ship");
     try {
       report.ship = await shipProject(root, { build: true, targets: m.ship.targets.join(","), version: m.ship.release, itch: m.ship.itch, androidPackage: m.ship.androidPackage, cfg: opts.cfg });
-      report.steps.push({ tool: "ship", title: "package releases (local only, never uploads)", status: "built", reason: "--ship", ms: Date.now() - s0, outputs: [".easy/ship/releases/"], notes: [m.ship.targets.join(", ")] });
+      pushStep({ tool: "ship", title: "package releases (local only, never uploads)", status: "built", reason: "--ship", ms: Date.now() - s0, outputs: [".easy/ship/releases/"], notes: [m.ship.targets.join(", ")] });
     } catch (e) {
-      report.steps.push({ tool: "ship", title: "package releases", status: "failed", reason: "--ship", ms: Date.now() - s0, outputs: [], notes: [], error: (e as Error).message });
+      pushStep({ tool: "ship", title: "package releases", status: "failed", reason: "--ship", ms: Date.now() - s0, outputs: [], notes: [], error: (e as Error).message });
     }
   }
   return finish();
