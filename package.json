@@ -11,6 +11,7 @@
     "dist",
     "templates",
     "schema",
+    "examples",
     "web/dist",
     "README.md",
     "CREDITS.md",
