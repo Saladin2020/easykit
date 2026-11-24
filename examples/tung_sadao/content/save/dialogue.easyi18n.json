@@ -1,0 +1,264 @@
+{
+  "format": "easyi18n/1",
+  "id": "dialogue",
+  "source": "th",
+  "locales": [
+    "th",
+    "en",
+    "ms"
+  ],
+  "strings": {
+    "dlg.village_delivery.char.elder": {
+      "th": "ตาเพิ่ม",
+      "en": "Grandpa Phoem",
+      "ms": "Tok Phoem",
+      "note": "character name (elder)",
+      "src": "sources/dialogues/village_delivery.ezd:16"
+    },
+    "dlg.village_delivery.char.farmer": {
+      "th": "ลุงมี",
+      "en": "Uncle Mee",
+      "ms": "Pak Cik Mee",
+      "note": "character name (farmer)",
+      "src": "sources/dialogues/village_delivery.ezd:14"
+    },
+    "dlg.village_delivery.char.kid": {
+      "th": "ต้น",
+      "en": "Ton",
+      "ms": "Ton",
+      "note": "character name (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:11"
+    },
+    "dlg.village_delivery.char.student": {
+      "th": "พี่ฝน",
+      "en": "Fon",
+      "ms": "Kak Fon",
+      "note": "character name (student)",
+      "src": "sources/dialogues/village_delivery.ezd:15"
+    },
+    "dlg.village_delivery.char.teacher": {
+      "th": "ครูสมใจ",
+      "en": "Teacher Somjai",
+      "ms": "Cikgu Somjai",
+      "note": "character name (teacher)",
+      "src": "sources/dialogues/village_delivery.ezd:13"
+    },
+    "dlg.village_delivery.char.vendor": {
+      "th": "ป้าแดง",
+      "en": "Auntie Daeng",
+      "ms": "Mak Cik Daeng",
+      "note": "character name (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:12"
+    },
+    "dlg.village_delivery.elder_1": {
+      "th": "ใครมาน่ะ... อ้อ ต้นนี่เอง",
+      "en": "Who's there... oh, it's Ton.",
+      "ms": "Siapa tu... oh, Ton rupanya.",
+      "note": "line (elder)",
+      "src": "sources/dialogues/village_delivery.ezd:63"
+    },
+    "dlg.village_delivery.elder_2": {
+      "th": "ลุงมีฝากมะม่วงมาด้วยครับตา",
+      "en": "Uncle Mee sent you a mango, Grandpa.",
+      "ms": "Pak Cik Mee kirim mangga, Tok.",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:66"
+    },
+    "dlg.village_delivery.elder_3": {
+      "th": "ใจดีจริงหลานคนนี้ ตาให้ค่าขนมเพิ่มอีกห้าบาท",
+      "en": "What a kind boy. Here's five more baht for snacks.",
+      "ms": "Baiknya budak ini. Tok beri lima baht lagi untuk belanja.",
+      "note": "line (elder)",
+      "src": "sources/dialogues/village_delivery.ezd:67"
+    },
+    "dlg.village_delivery.elder_4": {
+      "th": "ขอบใจนะหลาน กลับบ้านดีๆ ระวังรถด้วยล่ะ",
+      "en": "Thank you, dear. Go home safely and watch out for cars.",
+      "ms": "Terima kasih, cu. Balik elok-elok, hati-hati dengan kereta.",
+      "note": "line (elder)",
+      "src": "sources/dialogues/village_delivery.ezd:70"
+    },
+    "dlg.village_delivery.ending_1": {
+      "th": "ส่งครบ {delivered} ที่แล้ว เก่งมากต้น! วันนี้ได้ค่าขนมทั้งหมด {coins} บาท",
+      "en": "All {delivered} delivered. Well done, Ton! You earned {coins} baht today.",
+      "ms": "Semua {delivered} sudah dihantar. Syabas, Ton! Hari ini kamu dapat {coins} baht.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:75"
+    },
+    "dlg.village_delivery.ending_2": {
+      "th": "เย้! พรุ่งนี้ผมมาช่วยอีกนะครับ",
+      "en": "Yay! I'll come help again tomorrow!",
+      "ms": "Yay! Esok saya datang tolong lagi!",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:76"
+    },
+    "dlg.village_delivery.ending_3": {
+      "th": "ยังส่งไม่ครบเลยนะต้น",
+      "en": "You haven't finished the deliveries yet, Ton.",
+      "ms": "Belum habis hantar lagi, Ton.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:79"
+    },
+    "dlg.village_delivery.farm_1": {
+      "th": "ผักบุ้งของลุงมาถึงแล้วเหรอ นึกว่าจะลืมซะแล้ว",
+      "en": "My morning glory is here? I thought she'd forgotten.",
+      "ms": "Kangkung Pak Cik dah sampai? Ingatkan dia terlupa.",
+      "note": "line (farmer)",
+      "src": "sources/dialogues/village_delivery.ezd:48"
+    },
+    "dlg.village_delivery.farm_3": {
+      "th": "ขอบใจมากหลาน เอามะม่วงไปฝากตาเพิ่มลูกหนึ่งสิ",
+      "en": "Thanks, kiddo. Take a mango to Grandpa Phoem for me.",
+      "ms": "Terima kasih, cu. Bawakan sebiji mangga untuk Tok Phoem.",
+      "note": "line (farmer)",
+      "src": "sources/dialogues/village_delivery.ezd:51"
+    },
+    "dlg.village_delivery.farm_5": {
+      "th": "เฮ้ย! นั่นผักบุ้งของลุงนะ",
+      "en": "Hey! That's my morning glory!",
+      "ms": "Hoi! Itu kangkung Pak Cik!",
+      "note": "line (farmer)",
+      "src": "sources/dialogues/village_delivery.ezd:54"
+    },
+    "dlg.village_delivery.farm_6": {
+      "th": "ขอโทษครับลุง... ผมแค่หิวนิดหน่อย",
+      "en": "Sorry, Uncle... I was just a little hungry.",
+      "ms": "Maaf, Pak Cik... saya lapar sikit.",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:55"
+    },
+    "dlg.village_delivery.farm_7": {
+      "th": "ต้น! วิ่งเร็วจัง จะไปไหนเหรอ",
+      "en": "Ton! You're running so fast. Where are you off to?",
+      "ms": "Ton! Lajunya berlari. Nak ke mana?",
+      "note": "line (student)",
+      "src": "sources/dialogues/village_delivery.ezd:57"
+    },
+    "dlg.village_delivery.farm_8": {
+      "th": "ไปบ้านตาเพิ่มครับพี่ฝน ส่งของไปแล้ว {delivered} ที่ เหลืออีกที่เดียว",
+      "en": "To Grandpa Phoem's, Fon. {delivered} done, one more to go.",
+      "ms": "Ke rumah Tok Phoem, Kak Fon. Dah hantar {delivered}, tinggal satu lagi.",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:58"
+    },
+    "dlg.village_delivery.farm_c2": {
+      "th": "ส่งผักบุ้งให้ลุงมี",
+      "en": "Give the morning glory to Uncle Mee",
+      "ms": "Beri kangkung kepada Pak Cik Mee",
+      "note": "choice",
+      "src": "sources/dialogues/village_delivery.ezd:49"
+    },
+    "dlg.village_delivery.farm_c4": {
+      "th": "แอบชิมผักบุ้งก่อน",
+      "en": "Sneak a taste of the morning glory",
+      "ms": "Curi rasa kangkung dulu",
+      "note": "choice",
+      "src": "sources/dialogues/village_delivery.ezd:53"
+    },
+    "dlg.village_delivery.hall_1": {
+      "th": "ต้นวิ่งผ่านร้านก๋วยเตี๋ยวไปจนถึงศาลาประชาคมของหมู่บ้าน",
+      "en": "Ton runs past the noodle shop all the way to the village community hall.",
+      "ms": "Ton berlari melepasi kedai mi sampai ke dewan orang ramai kampung.",
+      "note": "narration",
+      "src": "sources/dialogues/village_delivery.ezd:40"
+    },
+    "dlg.village_delivery.hall_2": {
+      "th": "สวัสดีจ้ะต้น วันนี้มาแต่เช้าเลยนะ",
+      "en": "Good morning, Ton! You're here early today.",
+      "ms": "Selamat pagi, Ton! Awal kamu datang hari ini.",
+      "note": "line (teacher)",
+      "src": "sources/dialogues/village_delivery.ezd:41"
+    },
+    "dlg.village_delivery.hall_3": {
+      "th": "ป้าแดงฝากข้าวเหนียวมะม่วงมาให้เด็กๆ ที่มุมอ่านหนังสือครับครูสมใจ",
+      "en": "Auntie Daeng sent mango sticky rice for the kids at the reading corner, Teacher Somjai.",
+      "ms": "Mak Cik Daeng kirim pulut mangga untuk budak-budak di sudut bacaan, Cikgu Somjai.",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:42"
+    },
+    "dlg.village_delivery.hall_4": {
+      "th": "ขอบใจจ้ะ ฝากขอบคุณป้าแดงด้วยนะ ว่างๆ มาอ่านนิทานด้วยกันสิ",
+      "en": "Thank you! Please thank Auntie Daeng for me. Come and read stories with us sometime.",
+      "ms": "Terima kasih! Sampaikan terima kasih cikgu kepada Mak Cik Daeng. Datanglah baca cerita bersama nanti.",
+      "note": "line (teacher)",
+      "src": "sources/dialogues/village_delivery.ezd:44"
+    },
+    "dlg.village_delivery.market_1": {
+      "th": "เช้าวันเสาร์ ตลาดหน้าหมู่บ้านคึกคักกว่าทุกวัน",
+      "en": "Saturday morning: the village market is busier than ever.",
+      "ms": "Pagi Sabtu, pasar kampung lebih sibuk daripada biasa.",
+      "note": "narration",
+      "src": "sources/dialogues/village_delivery.ezd:20"
+    },
+    "dlg.village_delivery.market_2": {
+      "th": "ต้นจ๋า มาพอดีเลย ช่วยป้าส่งของให้ลูกค้าสามเจ้าหน่อยได้ไหม",
+      "en": "Ton, dear, perfect timing! Can you help me deliver to three customers?",
+      "ms": "Ton, kebetulan sungguh! Boleh tolong Mak Cik hantar barang kepada tiga pelanggan?",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:21"
+    },
+    "dlg.village_delivery.market_3": {
+      "th": "ตั้งสามเจ้าเลยเหรอครับป้าแดง",
+      "en": "Three whole customers, Auntie Daeng?",
+      "ms": "Tiga orang pelanggan, Mak Cik Daeng?",
+      "note": "line (kid)",
+      "src": "sources/dialogues/village_delivery.ezd:22"
+    },
+    "dlg.village_delivery.market_4": {
+      "th": "ข้าวเหนียวมะม่วงให้ครูสมใจที่ศาลาประชาคม ผักบุ้งให้ลุงมี แล้วก็ยาหม่องที่ผู้ใหญ่บ้านฝากให้ตาเพิ่มจ้ะ",
+      "en": "Mango sticky rice for Teacher Somjai at the community hall, morning glory for Uncle Mee, and the balm the headman is sending to Grandpa Phoem.",
+      "ms": "Pulut mangga untuk Cikgu Somjai di dewan orang ramai, kangkung untuk Pak Cik Mee, dan balsem kiriman ketua kampung untuk Tok Phoem.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:23"
+    },
+    "dlg.village_delivery.market_6": {
+      "th": "ขอบใจจ้ะ นี่ค่าขนมสิบบาทนะ",
+      "en": "Thank you, dear. Here's ten baht of snack money.",
+      "ms": "Terima kasih, nak. Ini sepuluh baht duit belanja.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:25"
+    },
+    "dlg.village_delivery.market_8": {
+      "th": "ไปเร็วๆ นะลูก เดี๋ยวข้าวเหนียวจะเย็นหมด",
+      "en": "Be quick, the sticky rice will go cold.",
+      "ms": "Cepat sikit, nanti pulut sejuk.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:29"
+    },
+    "dlg.village_delivery.market_c5": {
+      "th": "ได้เลยครับ! เดี๋ยวผมจัดให้",
+      "en": "Sure! I'll take care of it.",
+      "ms": "Boleh! Saya uruskan.",
+      "note": "choice",
+      "src": "sources/dialogues/village_delivery.ezd:24"
+    },
+    "dlg.village_delivery.market_c7": {
+      "th": "ขอแวะซื้อน้ำปั่นก่อนได้ไหมครับ",
+      "en": "Can I grab a smoothie first?",
+      "ms": "Boleh saya beli jus dulu?",
+      "note": "choice",
+      "src": "sources/dialogues/village_delivery.ezd:28"
+    },
+    "dlg.village_delivery.market_c9": {
+      "th": "วันนี้ผมไม่ว่างครับ",
+      "en": "I'm busy today.",
+      "ms": "Hari ini saya sibuk.",
+      "note": "choice",
+      "src": "sources/dialogues/village_delivery.ezd:32"
+    },
+    "dlg.village_delivery.refuse_1": {
+      "th": "ไม่เป็นไรจ้ะ ไว้วันหลังมาช่วยป้านะ",
+      "en": "That's all right, dear. Come help me another day.",
+      "ms": "Tak apa, nak. Lain kali datang tolong Mak Cik, ya.",
+      "note": "line (vendor)",
+      "src": "sources/dialogues/village_delivery.ezd:35"
+    },
+    "dlg.village_delivery.title": {
+      "th": "ส่งของเช้าที่บ้านทุ่งสะเดา",
+      "en": "Morning deliveries in Ban Thung Sadao",
+      "ms": "Hantaran pagi di Ban Thung Sadao",
+      "note": "dialogue title",
+      "src": "sources/dialogues/village_delivery.ezd:3"
+    }
+  }
+}

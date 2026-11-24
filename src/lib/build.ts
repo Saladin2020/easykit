@@ -25,7 +25,7 @@ export const STEP_DEPS: Record<ToolId, ToolId[]> = {
   tilemap: ["sprite"],
   dialogue: ["portrait"],
   npc: [],
-  quest: [],
+  quest: ["dialogue"],
   font: [],
   ui: [],
   sfx: [],
@@ -46,7 +46,7 @@ const STEP_INPUTS: Record<ToolId, Array<keyof Template>> = {
   tilemap: ["tilemap", "sprite"],
   dialogue: ["dialogue", "portrait"],
   npc: ["npc"],
-  quest: ["quest"],
+  quest: ["quest", "dialogue"],
   font: ["font"],
   ui: ["ui", "viewport"],
   sfx: ["sfx"],
@@ -102,6 +102,12 @@ export async function expandSources(root: string, patterns: string[]): Promise<s
     out.push(...hits.map((f) => path.join(path.dirname(abs), f)));
   }
   return out;
+}
+
+/** Workspace folder for one source file: the tool's documents folder, or strings/ for Easy Save string tables (th / en / ms translations). */
+export function sourceDir(tool: ToolId, file: string): string | undefined {
+  if (tool === "save" && file.endsWith(".easyi18n.json")) return "strings";
+  return SOURCE_DIR[tool];
 }
 
 const SECTION_OF: Partial<Record<ToolId, keyof GameManifest>> = {
@@ -169,14 +175,15 @@ export async function prepare(root: string, opts: { cfg?: KitConfig; log?: (l: s
     for (const t of BUILD_IDS) {
       if (absent.includes(t)) continue;
       await initTool(ctx, t);
-      const dir = SOURCE_DIR[t];
       const files = await expandSources(root, sourcesOf(m, t)).catch((e: Error) => {
         issues.push({ severity: "error", code: "sources", path: `${SECTION_OF[t]}.sources`, th: `ไม่พบไฟล์ต้นฉบับ: ${e.message}`, en: e.message });
         return [] as string[];
       });
-      if (dir) for (const f of files) {
-        await mkdir(path.join(ctx.ws(t), dir), { recursive: true });
-        await copyFile(f, path.join(ctx.ws(t), dir, path.basename(f)));
+      for (const f of files) {
+        const into = sourceDir(t, f);
+        if (!into) continue;
+        await mkdir(path.join(ctx.ws(t), into), { recursive: true });
+        await copyFile(f, path.join(ctx.ws(t), into, path.basename(f)));
       }
     }
   }

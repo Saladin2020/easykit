@@ -83,9 +83,16 @@ with sync_playwright() as p:
     ev("__kit.driveDialogue()")
     check(ev("__kit.manager.status('village_delivery')") == "active" and ev("__kit.manager.stepDone('village_delivery','accept')"), "quest started, accept done")
     check(ev("__kit.inv.state.coins") == coins0 + 10, "snack money into the wallet")
-    for npc, seg in [("luang_phi", "temple"), ("lung_mee", "farm"), ("ta_poem", "elder")]:
+    stops = ev("(__kit.kit.deliveries ?? [{speaker:'monk',step:'temple'},{speaker:'farmer',step:'farm'},{speaker:'elder',step:'elder'}]).map(d => [Object.keys(__kit.kit.npcs).find(n => __kit.kit.npcs[n].speaker === d.speaker), d.step])")
+    for i, (npc, seg) in enumerate(stops):
         ev(f"__kit.near('{npc}')")
         check(ev(f"__kit.interact('{npc}')") == f"dialogue:{seg}", f"{npc} → {seg}")
+        if i == 0:
+            page.wait_for_timeout(400)
+            for _ in range(2):
+                ev("__kit.box.advance()")
+                page.wait_for_timeout(400)
+            shot("04b_first_delivery")
         ev("__kit.driveDialogue()")
     check(ev("__kit.manager.status('village_delivery')") == "completed", "quest completed")
     ev("__kit.near('pa_daeng')")
@@ -111,7 +118,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(300)
     hud = ev("__kit.hud()")
     check(hud["questTitle"] and not ev(f"__kit.hasThai({json.dumps(hud['questTitle'])})"), f"HUD in Malay: {hud['questTitle']}")
-    ev("__kit.near('luang_phi', -26, 10)")
+    ev(f"__kit.near('{stops[0][0]}', -26, 10)")
     page.wait_for_timeout(500)
     shot("06_gameplay_ms")
     feat = ev("__kit.features") or {}

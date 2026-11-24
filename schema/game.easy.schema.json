@@ -366,6 +366,12 @@
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
+        "remove": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "sources": {
           "type": "array",
           "items": {
@@ -484,6 +490,32 @@
         "quest": {
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "deliveries": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "speaker": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "step": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "item": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "speaker",
+              "step",
+              "item"
+            ]
+          }
         },
         "sources": {
           "type": "array",
@@ -838,6 +870,9 @@
         "schema": {
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "gameStringsOnly": {
+          "type": "boolean"
         },
         "sources": {
           "type": "array",

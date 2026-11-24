@@ -1,0 +1,243 @@
+{
+  "format": "easyi18n/1",
+  "id": "quests",
+  "source": "th",
+  "locales": [
+    "th",
+    "en",
+    "ms"
+  ],
+  "strings": {
+    "quest.flag.coins": {
+      "th": "ค่าขนม",
+      "en": "Snack money",
+      "ms": "Duit belanja",
+      "note": "flag label",
+      "src": "sources/quests/village_delivery.ezq:8"
+    },
+    "quest.flag.reputation": {
+      "th": "ความดี",
+      "en": "Good deeds",
+      "ms": "Kebaikan",
+      "note": "flag label",
+      "src": "sources/quests/village_delivery.ezq:9"
+    },
+    "quest.help_tomorrow.step.market": {
+      "th": "ไปตลาดแต่เช้า",
+      "en": "Go to the market early",
+      "ms": "Pergi ke pasar awal pagi",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:70"
+    },
+    "quest.help_tomorrow.step.stall": {
+      "th": "ช่วยป้าแดงจัดแผง",
+      "en": "Help Auntie Daeng set up her stall",
+      "ms": "Tolong Mak Cik Daeng menyusun gerai",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:72"
+    },
+    "quest.help_tomorrow.summary": {
+      "th": "ต้นสัญญาว่าพรุ่งนี้จะมาช่วยป้าแดงที่ตลาดอีก",
+      "en": "Ton promised to help Auntie Daeng at the market again tomorrow.",
+      "ms": "Ton berjanji akan menolong Mak Cik Daeng di pasar lagi esok.",
+      "note": "quest summary",
+      "src": "sources/quests/village_delivery.ezq:67"
+    },
+    "quest.help_tomorrow.title": {
+      "th": "พรุ่งนี้มาช่วยอีก",
+      "en": "Back again tomorrow",
+      "ms": "Datang lagi esok",
+      "note": "quest title",
+      "src": "sources/quests/village_delivery.ezq:65"
+    },
+    "quest.item.balm.desc": {
+      "th": "ผู้ใหญ่บ้านฝากให้ตาเพิ่ม",
+      "en": "From the headman for Grandpa Phoem",
+      "ms": "Kiriman ketua kampung untuk Tok Phoem",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:13"
+    },
+    "quest.item.balm.name": {
+      "th": "ยาหม่อง",
+      "en": "Herbal balm",
+      "ms": "Balsem",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:13"
+    },
+    "quest.item.kanom_chan.desc": {
+      "th": "รางวัลจากป้าแดง",
+      "en": "A reward from Auntie Daeng",
+      "ms": "Hadiah daripada Mak Cik Daeng",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:15"
+    },
+    "quest.item.kanom_chan.name": {
+      "th": "ขนมชั้น",
+      "en": "Layer cake",
+      "ms": "Kuih lapis",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:15"
+    },
+    "quest.item.mango.desc": {
+      "th": "ลุงมีฝากไปให้ตาเพิ่ม",
+      "en": "Uncle Mee's gift for Grandpa Phoem",
+      "ms": "Kiriman Pak Cik Mee untuk Tok Phoem",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:14"
+    },
+    "quest.item.mango.name": {
+      "th": "มะม่วง",
+      "en": "Mango",
+      "ms": "Mangga",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:14"
+    },
+    "quest.item.morning_glory.desc": {
+      "th": "ของลุงมี",
+      "en": "For Uncle Mee",
+      "ms": "Untuk Pak Cik Mee",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:12"
+    },
+    "quest.item.morning_glory.name": {
+      "th": "ผักบุ้ง",
+      "en": "Morning glory",
+      "ms": "Kangkung",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:12"
+    },
+    "quest.item.nam_pan.desc": {
+      "th": "แก้วโปรดของต้น",
+      "en": "Ton's favourite cup",
+      "ms": "Minuman kegemaran Ton",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:16"
+    },
+    "quest.item.nam_pan.name": {
+      "th": "น้ำปั่น",
+      "en": "Fruit smoothie",
+      "ms": "Jus buah",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:16"
+    },
+    "quest.item.sticky_rice.desc": {
+      "th": "ของฝากครูสมใจ",
+      "en": "A treat for Teacher Somjai's reading corner",
+      "ms": "Juadah untuk sudut bacaan Cikgu Somjai",
+      "note": "quest item description",
+      "src": "sources/quests/village_delivery.ezq:11"
+    },
+    "quest.item.sticky_rice.name": {
+      "th": "ข้าวเหนียวมะม่วง",
+      "en": "Mango sticky rice",
+      "ms": "Pulut mangga",
+      "note": "quest item name",
+      "src": "sources/quests/village_delivery.ezq:11"
+    },
+    "quest.snack_money.step.fifteen": {
+      "th": "เก็บให้ครบ 15 บาท",
+      "en": "Save up 15 baht",
+      "ms": "Kumpul sehingga 15 baht",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:60"
+    },
+    "quest.snack_money.step.ten": {
+      "th": "ได้ค่าขนม 10 บาท",
+      "en": "Earn 10 baht of snack money",
+      "ms": "Dapat 10 baht duit belanja",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:58"
+    },
+    "quest.snack_money.summary": {
+      "th": "เก็บค่าขนมไว้ซื้อน้ำปั่น ตอนนี้มี {coins} บาท",
+      "en": "Saving up for a smoothie. {coins} baht so far.",
+      "ms": "Mengumpul duit untuk beli jus. Setakat ini {coins} baht.",
+      "note": "quest summary",
+      "src": "sources/quests/village_delivery.ezq:57"
+    },
+    "quest.snack_money.title": {
+      "th": "ค่าขนมของต้น",
+      "en": "Ton's snack money",
+      "ms": "Duit belanja Ton",
+      "note": "quest title",
+      "src": "sources/quests/village_delivery.ezq:55"
+    },
+    "quest.village_delivery.file_title": {
+      "th": "ส่งของเช้าที่บ้านทุ่งสะเดา",
+      "en": "Morning deliveries in Ban Thung Sadao",
+      "ms": "Hantaran pagi di Ban Thung Sadao",
+      "note": "quest file title",
+      "src": "sources/quests/village_delivery.ezq:4"
+    },
+    "quest.village_delivery.step.accept": {
+      "th": "รับงานจากป้าแดง",
+      "en": "Take the job from Auntie Daeng",
+      "ms": "Terima tugas daripada Mak Cik Daeng",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:26"
+    },
+    "quest.village_delivery.step.accept.hint": {
+      "th": "คุยกับป้าแดงที่ตลาด",
+      "en": "Talk to Auntie Daeng at the market",
+      "ms": "Bercakap dengan Mak Cik Daeng di pasar",
+      "note": "step hint",
+      "src": "sources/quests/village_delivery.ezq:28"
+    },
+    "quest.village_delivery.step.elder": {
+      "th": "เอายาหม่องไปให้ตาเพิ่ม",
+      "en": "Bring the balm to Grandpa Phoem",
+      "ms": "Bawa balsem kepada Tok Phoem",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:39"
+    },
+    "quest.village_delivery.step.farm": {
+      "th": "ส่งผักบุ้งให้ลุงมีที่นา",
+      "en": "Bring the morning glory to Uncle Mee's field",
+      "ms": "Hantar kangkung ke sawah Pak Cik Mee",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:33"
+    },
+    "quest.village_delivery.step.hall": {
+      "th": "ส่งข้าวเหนียวมะม่วงให้ครูสมใจที่ศาลาประชาคม",
+      "en": "Bring the mango sticky rice to Teacher Somjai at the community hall",
+      "ms": "Hantar pulut mangga kepada Cikgu Somjai di dewan orang ramai",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:29"
+    },
+    "quest.village_delivery.step.hall.hint": {
+      "th": "ศาลาประชาคมอยู่ทางทิศตะวันตกเฉียงเหนือ",
+      "en": "The community hall is to the north-west",
+      "ms": "Dewan orang ramai terletak di arah barat laut",
+      "note": "step hint",
+      "src": "sources/quests/village_delivery.ezq:31"
+    },
+    "quest.village_delivery.step.mango": {
+      "th": "รับมะม่วงจากลุงมีไปฝากตาเพิ่ม",
+      "en": "Take Uncle Mee's mango to Grandpa Phoem",
+      "ms": "Bawa mangga Pak Cik Mee kepada Tok Phoem",
+      "note": "bonus step",
+      "src": "sources/quests/village_delivery.ezq:36"
+    },
+    "quest.village_delivery.step.report": {
+      "th": "ส่งของครบสามที่",
+      "en": "Finish all three deliveries",
+      "ms": "Selesaikan ketiga-tiga penghantaran",
+      "note": "step",
+      "src": "sources/quests/village_delivery.ezq:43"
+    },
+    "quest.village_delivery.summary": {
+      "th": "ป้าแดงฝากของให้ลูกค้าสามเจ้า ส่งไปแล้ว {delivered}/3 ที่",
+      "en": "Auntie Daeng has orders for three customers. Delivered {delivered}/3.",
+      "ms": "Mak Cik Daeng ada pesanan untuk tiga pelanggan. Sudah dihantar {delivered}/3.",
+      "note": "quest summary",
+      "src": "sources/quests/village_delivery.ezq:20"
+    },
+    "quest.village_delivery.title": {
+      "th": "ส่งของเช้าที่บ้านทุ่งสะเดา",
+      "en": "Morning deliveries in Ban Thung Sadao",
+      "ms": "Hantaran pagi di Ban Thung Sadao",
+      "note": "quest title",
+      "src": "sources/quests/village_delivery.ezq:18"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "format": "easyi18n/1",
+  "id": "tung_sadao_kit",
+  "source": "th",
+  "locales": [
+    "th",
+    "en",
+    "ms"
+  ],
+  "strings": {
+    "kit.npc.kru_somjai.name": {
+      "th": "ครูสมใจ",
+      "en": "Teacher Somjai",
+      "ms": "Cikgu Somjai",
+      "note": "NPC name (kru_somjai)"
+    },
+    "kit.npc.kru_somjai.bark": {
+      "th": "เช้านี้ครูจัดมุมอ่านหนังสือให้เด็กๆ ที่ศาลาประชาคมจ้ะ",
+      "en": "I'm setting up a reading corner for the kids at the community hall this morning.",
+      "ms": "Pagi ini cikgu sediakan sudut bacaan untuk budak-budak di dewan orang ramai.",
+      "note": "NPC bark (kru_somjai)"
+    }
+  }
+}

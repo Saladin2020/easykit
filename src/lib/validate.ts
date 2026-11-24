@@ -129,6 +129,23 @@ export function crossCheck(m: GameManifest, c: Catalog): Issue[] {
     }
   }
 
+  // --- delivery stops (opt-in) and removed map characters
+  const removed = new Set(m.tilemaps.remove ?? []);
+  m.tilemaps.remove?.forEach((who) => {
+    if (m.npcs.roles[who] && !m.sprites.cast.some((x) => (x.map ?? x.id) === who && x.at)) err("tilemap.remove", `npcs.roles.${who}`, `"${who}" ถูกนำออกจากแผนที่แต่ยังมีบทบาทใน npcs.roles`, `"${who}" is removed from the map but still has an npcs.roles entry`);
+  });
+  const mainQuest = qs?.find((q) => q.id === (m.quests.quest ?? m.quests.main));
+  m.quests.deliveries?.forEach((d, i) => {
+    const p = `quests.deliveries[${i}]`;
+    if (dlg && !dlg.chars.has(d.speaker)) missing("delivery.speaker", `${p}.speaker`, "dialogue", `ผู้พูดในบท ${m.dialogue.main}`, `Speaker in ${m.dialogue.main}`, d.speaker, dlg.chars.keys());
+    const placed = (who: string) => !removed.has(who) || m.sprites.cast.some((x) => (x.map ?? x.id) === who && x.at);
+    if (!Object.entries(m.npcs.roles).some(([who, r]) => r.role === "quest" && r.speaker === d.speaker && placed(who)))
+      err("delivery.npc", `${p}.speaker`, `ไม่มี NPC ภารกิจที่พูดเป็น "${d.speaker}" ใน npcs.roles`, `no quest NPC in npcs.roles speaks as "${d.speaker}"`);
+    if (mainQuest && !mainQuest.steps.includes(d.step)) missing("delivery.step", `${p}.step`, "quest", `ขั้นของภารกิจ ${mainQuest.id}`, `Step of quest ${mainQuest.id}`, d.step, mainQuest.steps);
+    if (!m.dialogue.segments.includes(d.step)) err("delivery.segment", `${p}.step`, `"${d.step}" ต้องอยู่ใน dialogue.segments ด้วย`, `"${d.step}" must also be one of dialogue.segments`);
+    if (ready("items") && !c.items.has(d.item) && !mainQuest?.declaredItems.includes(d.item)) missing("delivery.item", `${p}.item`, "items", "ไอเทม", "Item", d.item, c.items.keys());
+  });
+
   // --- items: shops, halal stalls
   if (ready("items")) {
     if (!c.shops.has(m.items.shop)) missing("items.shop", "items.shop", "items", "ร้าน", "Shop", m.items.shop, c.shops.keys());

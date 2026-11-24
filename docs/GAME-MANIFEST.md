@@ -11,9 +11,9 @@ easy build MyGame --ship                 # + Easy Ship local packages (never upl
 easykit check MyGame --shots shots/      # headless Godot + web tests
 ```
 
-Example: [`examples/tung_sadao`](../examples/tung_sadao) — ตลาดเช้าบ้านทุ่งสะเดา, a Thai village with a halal roti stall (Easy Items `halal: true`, checked by `items.halalShops`) and an ATB battle over a custom encounter table.
+Example: [`examples/tung_sadao`](../examples/tung_sadao) — ตลาดเช้าบ้านทุ่งสะเดา, a Thai village with a halal roti stall (Easy Items `halal: true`, checked by `items.halalShops`), an ATB battle over a custom encounter table, and its own first delivery: ครูสมใจ, a teacher at the village school, waiting at the community hall (ศาลาประชาคม). It replaces the base game's first stop through `sources` + opt-ins only (`tilemaps.remove`, `quests.deliveries`, `save.gameStringsOnly`), so existing games are unchanged.
 
-<p align="center"><img src="assets/easy-build-title.png" width="45%" alt="Title screen: ตลาดเช้าบ้านทุ่งสะเดา" /> <img src="assets/easy-build-halal-stall.png" width="45%" alt="Bang Mat's halal stall shop" /></p>
+<p align="center"><img src="assets/easy-build-title.png" width="45%" alt="Title screen: ตลาดเช้าบ้านทุ่งสะเดา" /> <img src="assets/easy-build-halal-stall.png" width="45%" alt="Bang Mat's halal stall shop" /><br/><img src="assets/easy-build-teacher-hall.png" width="45%" alt="ครูสมใจ at the community hall: the demo's first delivery" /></p>
 
 ## Shape
 
@@ -25,15 +25,15 @@ Schema: [`schema/game.easy.schema.json`](../schema/game.easy.schema.json) (gener
 | `sprites` | Easy Sprite | `player`, `palette`, `cast[]` / `side[]` (`id`, `base` project, `recolor`, `map` name, `at`, `facing`) |
 | `portraits` | Easy Portrait | `sets[]` made `from` cast members, `keep` sample ids |
 | `scenes` | Easy Scene | `title{id, cameraRange, actor}` |
-| `tilemaps` | Easy Tilemap | `main` map |
+| `tilemaps` | Easy Tilemap | `main` map, `remove` (map characters to take off, e.g. to replace one with a new cast member placed with `at`) |
 | `npcs` | Easy NPC | `roles` (quest/shop/bark per map character), `schedules` (map character → Easy NPC id), `start`, `secondsPerMinute` |
 | `dialogue` | Easy Dialogue | `main`, `style`, `segments` |
-| `quests` | Easy Quest | `main` file, `quest` id |
+| `quests` | Easy Quest | `main` file, `quest` id, `deliveries` (opt-in: the main quest's stops `{speaker, step, item}`; the step id is also the dialogue segment; default: the base's monk / farmer / elder) |
 | `items` | Easy Items | `shop`, `halalShops` |
 | `battle` | Easy Battle | `table`, `enemies`, `zone`, `party`, `heroSheets`, `timing` turn\|atb, `atbMode`, `layout` classic\|backview, `status` |
 | `ui` / `fx` / `sfx` / `music` | Easy UI / FX / SFX / Music | screen + theme; seeded variations + exports; world / shop songs |
 | `anim` | Easy Anim | `cutscene` |
-| `save` | Easy Save | `schema` (th/en/ms string tables are extracted from the other docs) |
+| `save` | Easy Save | `schema`, `gameStringsOnly` (opt-in: drop Easy Save's sample dialogue / quest strings and unused kit NPC strings). th/en/ms tables are extracted from the game's docs; `*.easyi18n.json` sources go to `strings/` (translations for overridden dialogue / quests) |
 | `ship` | Easy Ship | `targets`, `release`, `itch`, `androidPackage` |
 
 Every section except `game` and `ship` takes `sources`: project files (a `*` is allowed in the file name) copied into that tool's workspace before its step, e.g. `"sources": ["content/items/*.easyitems.json"]`.

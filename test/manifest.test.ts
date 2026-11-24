@@ -20,14 +20,14 @@ const parse = (raw: unknown) => {
 function catalog(over: Partial<Catalog> = {}): Catalog {
   return {
     ready: new Set<ToolId>(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "items", "battle", "ui", "fx", "sfx", "music", "anim", "save", "font"]),
-    spriteProjects: new Set(["little_boy", "market_seller", "roti_seller", "hijab_teacher", "kopiah_boy", "pak_cik_jubah", "grandpa", "village_farmer", "side_little_boy", "side_market_seller", "side_kopiah_boy", "side_hijab_teacher", "side_grandma"]),
+    spriteProjects: new Set(["teacher", "little_boy", "market_seller", "roti_seller", "hijab_teacher", "kopiah_boy", "pak_cik_jubah", "grandpa", "village_farmer", "side_little_boy", "side_market_seller", "side_kopiah_boy", "side_hijab_teacher", "side_grandma"]),
     portraits: new Set(["town_monk", "town_kid", "town_vendor", "town_hijab_teacher"]),
     scenes: new Set(["harmony_town"]),
     maps: new Map([["multicultural_village", { characters: new Set(["ton", "pa_daeng", "bang_roti", "kak_fatimah", "adam", "pak_cik_ismail", "ta_poem", "luang_phi", "aisyah", "pak_hamid"]), spawns: new Set() }]]),
-    dialogues: new Map([["village_delivery", { chars: new Map<string, string | null>([["kid", "town_kid"], ["vendor", "town_vendor"], ["monk", "town_monk"], ["farmer", "town_farmer"], ["elder", "town_elder"], ["fatimah", "town_hijab_teacher"]]) }]]),
+    dialogues: new Map([["village_delivery", { chars: new Map<string, string | null>([["kid", "town_kid"], ["vendor", "town_vendor"], ["monk", "town_monk"], ["farmer", "town_farmer"], ["elder", "town_elder"], ["fatimah", "town_hijab_teacher"], ["teacher", "town_teacher"]]) }]]),
     npcs: new Map([["fatimah", { sprite: "town_hijab_teacher" }], ["adam", { sprite: "town_kopiah_boy" }], ["pakcik", { sprite: "town_pak_cik" }], ["aisyah", { sprite: "town_tadika_girl" }], ["hamid", { sprite: "town_fisher" }]]),
     npcSheets: new Set(["town_hijab_teacher", "town_kopiah_boy", "town_pak_cik", "town_tadika_girl", "town_fisher"]),
-    quests: new Map([["village_delivery", [{ id: "village_delivery", dialogue: "village_delivery", declaredItems: [], usedItems: [{ item: "khanom", line: 9 }], givers: ["vendor"] }]]]),
+    quests: new Map([["village_delivery", [{ id: "village_delivery", dialogue: "village_delivery", declaredItems: ["sticky_rice", "morning_glory", "balm"], usedItems: [{ item: "khanom", line: 9 }], givers: ["vendor"], steps: ["accept", "hall", "temple", "farm", "elder", "report"] }]]]),
     items: new Map([
       ["khanom", { id: "khanom", tags: [] }],
       ["roti_mataba", { id: "roti_mataba", tags: ["halal"], halal: true }],
@@ -144,6 +144,36 @@ describe("cross-references", () => {
   it("does not check references into workspaces that are not there yet", async () => {
     const c = catalog({ ready: new Set(), battle: { enemies: new Set(), heroes: new Set(), encounters: new Set() } });
     expect(errors(parse(await example()), c).filter((e) => e.code.startsWith("battle."))).toEqual([]);
+  });
+});
+
+describe("delivery stops (quests.deliveries) and removed map characters", () => {
+  it("the example replaces the base's first stop with a teacher at the community hall", async () => {
+    const m = parse(await example());
+    expect(m.quests.deliveries?.[0]).toEqual({ speaker: "teacher", step: "hall", item: "sticky_rice" });
+    expect(m.tilemaps.remove).toEqual(["luang_phi"]);
+    expect(JSON.stringify(m)).not.toMatch(/"monk"|"luang_phi":|หลวงพี่|วัด/);
+  });
+
+  it("checks each stop's speaker, quest NPC, step and segment", async () => {
+    const raw = await example();
+    raw.quests.deliveries[0] = { speaker: "ghost", step: "library", item: "sticky_rice" };
+    const codes = errors(parse(raw)).map((e) => e.code);
+    expect(codes).toEqual(expect.arrayContaining(["delivery.speaker", "delivery.npc", "delivery.step", "delivery.segment"]));
+  });
+
+  it("a removed map character cannot keep an NPC role", async () => {
+    const raw = await example();
+    raw.npcs.roles.luang_phi = { role: "bark" };
+    expect(errors(parse(raw)).find((e) => e.code === "tilemap.remove")?.en).toMatch(/luang_phi/);
+  });
+
+  it("games without deliveries keep the base's stops (no new keys in their template)", async () => {
+    const t = await loadTemplate("village_delivery");
+    const back = manifestToTemplate(parse(templateToManifest(t, { name: "Old", engine: "both", seed: 1 })), t);
+    expect(back.deliveries).toBeUndefined();
+    expect(back.tilemap).toEqual({ map: t.tilemap.map });
+    expect(back.save).toEqual({ schema: t.save.schema });
   });
 });
 

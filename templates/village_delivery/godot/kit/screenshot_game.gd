@@ -81,7 +81,7 @@ func _process(delta: float) -> bool:
 				shot("05_shop_en")
 				game.close_shop()
 				game.set_language("ms")
-				near("luang_phi")
+				near(game._npc_for(str(game.deliveries()[0]["speaker"])))
 				step = 5
 				t = 0
 		5:

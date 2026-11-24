@@ -4,7 +4,7 @@ import path from "node:path";
 import { copyTree, exists, mergeTree, readJson, walk, writeJson, type CopyReport } from "./fsutil.js";
 import { LOCALES, localizeDialogue, mergeTables, segmentDialogue, typesetDialogue, type StringTable } from "./localize.js";
 import type { Ctx } from "./pipeline.js";
-import { templateDir } from "./pipeline.js";
+import { DEFAULT_DELIVERIES, templateDir } from "./pipeline.js";
 import type { ToolId } from "./tools.js";
 
 /** Files every Easy export ships for its own demo; the kit writes its own versions. */
@@ -238,6 +238,7 @@ export function kitData(c: Ctx, engine: "godot" | "pixi") {
     player: c.tpl.sprite.player,
     npcs: c.tpl.npcs,
     quest: { id: c.tpl.quest.id, main: c.tpl.quest.main },
+    deliveries: c.tpl.deliveries ?? DEFAULT_DELIVERIES,
     dialogue: { id: c.tpl.dialogue.id, segments: c.tpl.dialogue.segments },
     shop: c.tpl.items.shop,
     music: { world: c.tpl.music.world, shop: c.tpl.music.shop },

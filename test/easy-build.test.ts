@@ -31,6 +31,14 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 17 tools)", () => {
     expect(s).toContain("tung_sadao_fields");
     const battle = JSON.parse(await readFile(path.join(dir, "TungSadao/godot/easybattle/easybattle.json"), "utf8"));
     expect(battle.ui.timing).toBe("atb");
+    // the first stop is a lay teacher at the community hall; the base's monk is gone from the game data
+    expect(kit.deliveries[0]).toEqual({ speaker: "teacher", step: "hall", item: "sticky_rice" });
+    expect(kit.npcs.kru_somjai).toEqual({ role: "quest", speaker: "teacher" });
+    expect(kit.npcs.luang_phi).toBeUndefined();
+    for (const f of ["web/save/strings.json", "web/quest/village_delivery.quests.json", "web/npc/easynpc.world.json", "web/kit/kit.json"])
+      expect(await readFile(path.join(dir, "TungSadao", f), "utf8"), f).not.toMatch(/หลวงพี่|luang_phi/);
+    const strings = JSON.parse(await readFile(path.join(dir, "TungSadao/web/save/strings.json"), "utf8"));
+    expect(JSON.stringify(strings)).toContain("Hantaran pagi di Ban Thung Sadao");
     expect(await readFile(path.join(dir, "TungSadao/BUILD-REPORT.md"), "utf8")).toMatch(/✅ built/);
   });
 

@@ -12,6 +12,7 @@ export interface QuestInfo {
   /** give / take / reward item ids with their line numbers */
   usedItems: Array<{ item: string; line: number }>;
   givers: string[];
+  steps: string[];
 }
 export interface ItemInfo {
   id: string;
@@ -65,9 +66,10 @@ export function parseEzq(text: string): QuestInfo[] {
     if ((m = line.match(/^@dialogue\s+(\S+)/))) dialogue = m[1]!;
     else if ((m = line.match(/^@item\s+([a-z0-9_-]+)/))) declared.push(m[1]!);
     else if ((m = line.match(/^===\s+([a-z0-9_-]+)/))) {
-      cur = { id: m[1]!, dialogue, declaredItems: declared, usedItems: [], givers: [] };
+      cur = { id: m[1]!, dialogue, declaredItems: declared, usedItems: [], givers: [], steps: [] };
       out.push(cur);
     } else if (cur && (m = line.match(/^giver\s+(\S+)/))) cur.givers.push(m[1]!);
+    else if (cur && (m = line.match(/^(?:step|bonus)\s+([a-z0-9_-]+)/))) cur.steps.push(m[1]!);
     else if (cur && (m = line.match(/^(?:give|take|has)\s+([a-z0-9_-]+)/))) cur.usedItems.push({ item: m[1]!, line: i + 1 });
   });
   return out;

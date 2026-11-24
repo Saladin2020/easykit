@@ -80,6 +80,15 @@
           7.5
         ],
         "facing": "front"
+      },
+      {
+        "id": "kru_somjai",
+        "base": "teacher",
+        "at": [
+          9,
+          10
+        ],
+        "facing": "front"
       }
     ],
     "side": [
@@ -131,11 +140,16 @@
         "th": "ตาเพิ่ม",
         "en": "Grandpa Poem",
         "ms": "Tok Poem"
+      },
+      {
+        "id": "town_teacher",
+        "from": "kru_somjai",
+        "th": "ครูสมใจ",
+        "en": "Teacher Somjai",
+        "ms": "Cikgu Somjai"
       }
     ],
-    "keep": [
-      "town_monk"
-    ]
+    "keep": []
   },
   "scenes": {
     "title": {
@@ -148,7 +162,10 @@
     }
   },
   "tilemaps": {
-    "main": "multicultural_village"
+    "main": "multicultural_village",
+    "remove": [
+      "luang_phi"
+    ]
   },
   "npcs": {
     "roles": {
@@ -156,9 +173,9 @@
         "speaker": "vendor",
         "role": "quest"
       },
-      "luang_phi": {
-        "speaker": "monk",
-        "role": "quest"
+      "kru_somjai": {
+        "role": "quest",
+        "speaker": "teacher"
       },
       "lung_mee": {
         "speaker": "farmer",
@@ -196,7 +213,10 @@
       "pak_hamid": "hamid"
     },
     "start": "07:00",
-    "secondsPerMinute": 0.5
+    "secondsPerMinute": 0.5,
+    "sources": [
+      "content/npc/village.easynpc.json"
+    ]
   },
   "dialogue": {
     "main": "village_delivery",
@@ -204,14 +224,37 @@
     "segments": [
       "market",
       "refuse",
-      "temple",
+      "hall",
       "farm",
       "elder",
       "ending"
+    ],
+    "sources": [
+      "content/dialogue/village_delivery.ezd"
     ]
   },
   "quests": {
-    "main": "village_delivery"
+    "main": "village_delivery",
+    "deliveries": [
+      {
+        "speaker": "teacher",
+        "step": "hall",
+        "item": "sticky_rice"
+      },
+      {
+        "speaker": "farmer",
+        "step": "farm",
+        "item": "morning_glory"
+      },
+      {
+        "speaker": "elder",
+        "step": "elder",
+        "item": "balm"
+      }
+    ],
+    "sources": [
+      "content/quest/village_delivery.ezq"
+    ]
   },
   "items": {
     "shop": "halal_stall",
@@ -310,7 +353,11 @@
     "cutscene": "village_morning_delivery"
   },
   "save": {
-    "schema": "village_delivery"
+    "schema": "village_delivery",
+    "gameStringsOnly": true,
+    "sources": [
+      "content/save/*.easyi18n.json"
+    ]
   },
   "ship": {
     "targets": [

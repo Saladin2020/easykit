@@ -68,7 +68,12 @@ export const GameManifestSchema = z
     }),
     portraits: z.object({ sets: z.array(z.object({ id: id(), from: id(), th: z.string(), en: z.string(), ms: z.string() })), keep: z.array(id()).default([]), sources }).optional(),
     scenes: z.object({ title: z.object({ id: id(), cameraRange: z.tuple([z.number(), z.number()]), actor: id() }), sources }),
-    tilemaps: z.object({ main: id(), sources }),
+    tilemaps: z.object({
+      main: id(),
+      /** Map characters to take off the map (replace one with a new cast member placed with `at`). */
+      remove: z.array(z.string()).optional(),
+      sources,
+    }),
     npcs: z.object({
       /** Who stands where and what they do when you talk: quest (dialogue speaker), shop (Easy Items shop) or bark. */
       roles: z.record(z.string(), z.object({ role: z.enum(["quest", "shop", "bark"]), speaker: id().optional(), shop: id().optional() })),
@@ -79,7 +84,13 @@ export const GameManifestSchema = z
       sources,
     }),
     dialogue: z.object({ main: id(), style: id().default("teak"), segments: z.array(id()).min(1), sources }),
-    quests: z.object({ main: id(), quest: id().optional(), sources }),
+    quests: z.object({
+      main: id(),
+      quest: id().optional(),
+      /** The main quest's delivery stops: talk to dialogue `speaker` during quest step `step` (also the dialogue segment) to hand over `item`. Default: the base's. */
+      deliveries: z.array(z.object({ speaker: id(), step: id(), item: id() })).min(1).optional(),
+      sources,
+    }),
     items: z.object({
       shop: id(),
       /** Shops that must only stock halal goods (Muslim stalls); checked against Easy Items' shop + item data. */
@@ -108,7 +119,12 @@ export const GameManifestSchema = z
     sfx: z.object({ bank: id(), seeded: z.array(z.object({ id: id(), preset: id() })).default([]), sources }),
     music: z.object({ seeded: z.array(z.object({ id: id(), from: id() })).default([]), export: z.array(id()).min(1), world: id(), shop: id(), sources }),
     anim: z.object({ cutscene: id(), sources }),
-    save: z.object({ schema: id(), sources }),
+    save: z.object({
+      schema: id(),
+      /** Keep only this game's text in the th / en / ms string tables (drops Easy Save's sample dialogue / quest strings). */
+      gameStringsOnly: z.boolean().optional(),
+      sources,
+    }),
     ship: z
       .object({
         targets: z.array(z.enum(["web", "windows", "linux", "android"])).default(["web"]),
@@ -182,11 +198,12 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     sprite: { player: m.sprites.player, cast: m.sprites.cast, side: m.sprites.side },
     portrait: m.portraits ? { sets: m.portraits.sets, keep: m.portraits.keep } : undefined,
     scene: m.scenes.title,
-    tilemap: { map: m.tilemaps.main },
+    tilemap: { map: m.tilemaps.main, ...(m.tilemaps.remove?.length ? { remove: m.tilemaps.remove } : {}) },
     dialogue: { id: m.dialogue.main, style: m.dialogue.style, segments: m.dialogue.segments },
     npc: m.npcs.schedules ? { map: m.npcs.schedules, start: m.npcs.start, secondsPerMinute: m.npcs.secondsPerMinute } : undefined,
     npcs: m.npcs.roles,
     quest: { id: m.quests.main, main: m.quests.quest ?? m.quests.main },
+    ...(m.quests.deliveries ? { deliveries: m.quests.deliveries } : {}),
     font: { hud: m.game.font, small: "makham-8", dialogue: m.game.font },
     ui: { doc: m.ui.screen, theme: m.ui.theme },
     sfx: { bank: m.sfx.bank, seeded: m.sfx.seeded },
@@ -195,7 +212,7 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     anim: { cutscene: m.anim.cutscene },
     items: { shop: m.items.shop },
     battle: b ? { table: b.table, zone: b.zone, culture: b.culture, ground: b.ground, party: b.party, heroSheets: b.heroSheets, firstSeed: b.firstSeed, screen: { timing: b.timing, atbMode: b.atbMode, layout: b.layout, status: b.status } } : undefined,
-    save: { schema: m.save.schema },
+    save: { schema: m.save.schema, ...(m.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
   };
 }
 
@@ -209,10 +226,10 @@ export function templateToManifest(t: Template, o: { name: string; engine: "godo
     sprites: { player: t.sprite.player, palette: t.palette, cast: t.sprite.cast as GameManifestInput["sprites"]["cast"], side: t.sprite.side as GameManifestInput["sprites"]["cast"] },
     ...(t.portrait ? { portraits: { sets: t.portrait.sets, keep: t.portrait.keep ?? [] } } : {}),
     scenes: { title: src(t.scene) },
-    tilemaps: { main: t.tilemap.map },
+    tilemaps: { main: t.tilemap.map, ...(t.tilemap.remove ? { remove: t.tilemap.remove } : {}) },
     npcs: { roles: t.npcs, ...(t.npc ? { schedules: t.npc.map, start: t.npc.start, secondsPerMinute: t.npc.secondsPerMinute } : {}) },
     dialogue: { main: t.dialogue.id, style: t.dialogue.style, segments: t.dialogue.segments },
-    quests: { main: t.quest.id, ...(t.quest.main !== t.quest.id ? { quest: t.quest.main } : {}) },
+    quests: { main: t.quest.id, ...(t.quest.main !== t.quest.id ? { quest: t.quest.main } : {}), ...(t.deliveries ? { deliveries: t.deliveries } : {}) },
     items: { shop: t.items.shop, halalShops: [] },
     ...(t.battle ? { battle: { table: t.battle.table, zone: t.battle.zone, culture: t.battle.culture, ground: t.battle.ground, party: t.battle.party, heroSheets: t.battle.heroSheets ?? {}, ...(t.battle.firstSeed !== undefined ? { firstSeed: t.battle.firstSeed } : {}), timing: t.battle.screen?.timing ?? "turn", atbMode: t.battle.screen?.atbMode ?? "wait", layout: t.battle.screen?.layout ?? "classic" } } : {}),
     ui: { screen: t.ui.doc, theme: t.ui.theme },
@@ -220,7 +237,7 @@ export function templateToManifest(t: Template, o: { name: string; engine: "godo
     sfx: { bank: t.sfx.bank, seeded: t.sfx.seeded },
     music: { seeded: t.music.seeded, export: t.music.export, world: t.music.world, shop: t.music.shop },
     anim: { cutscene: t.anim.cutscene },
-    save: { schema: t.save.schema },
+    save: { schema: t.save.schema, ...(t.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
     ...(o.ship ? { ship: o.ship } : {}),
   };
 }
