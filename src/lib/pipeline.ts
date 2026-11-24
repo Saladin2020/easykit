@@ -6,6 +6,7 @@ import { copyTree, exists, readJson, rng, writeJson } from "./fsutil.js";
 import { ToolMcp, runCli, type ToolEnv } from "./runner.js";
 import { BUILD_IDS, CORE_TOOL_IDS, TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
 import { doctor } from "./doctor.js";
+import { MANIFEST_FILE, templateToManifest } from "./manifest.js";
 
 export const TEMPLATES = ["village_delivery"] as const;
 export type TemplateId = (typeof TEMPLATES)[number];
@@ -47,7 +48,15 @@ export interface Template {
   /** Easy Font ids for the HUD, small text and the dialogue box. */
   font?: { hud: string; small: string; dialogue: string };
   /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
-  battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number };
+  battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number; screen?: BattleScreen };
+}
+
+/** Easy Battle screen settings (written into the battle workspace as a `ui` document). */
+export interface BattleScreen {
+  timing?: "turn" | "atb";
+  atbMode?: "wait" | "active";
+  layout?: "classic" | "backview";
+  status?: "rows" | "cards" | "none";
 }
 
 export function templateDir(id: string): string {
@@ -147,15 +156,17 @@ export const STEP_TITLES: Record<ToolId, string> = {
 
 const cli = (c: Ctx, tool: ToolId, args: string[], workspaceFlag = true) => runCli(tool, c.env(tool), args, { workspaceFlag });
 
-async function initTool(c: Ctx, tool: ToolId): Promise<void> {
+export async function initTool(c: Ctx, tool: ToolId): Promise<void> {
+  // Rebuilds keep an initialised workspace as it is (its documents may have been edited); init only fills new ones.
+  if ((await readdir(c.ws(tool)).catch(() => [] as string[])).some((f) => f !== "exports")) return;
   await mkdir(c.ws(tool), { recursive: true });
   // Easy Sprite's init works on the current folder; the others take --workspace.
   await cli(c, tool, ["init"], tool !== "sprite");
 }
 
-type StepFn = (c: Ctx, notes: string[]) => Promise<string[]>;
+export type StepFn = (c: Ctx, notes: string[]) => Promise<string[]>;
 
-const STEPS: Record<ToolId, StepFn> = {
+export const STEPS: Record<ToolId, StepFn> = {
   async sprite(c, notes) {
     await initTool(c, "sprite");
     const ws = c.ws("sprite");
@@ -291,6 +302,12 @@ const STEPS: Record<ToolId, StepFn> = {
       const src = path.join(c.assets, "sprites", "side", `${sheet}.png`);
       if (await exists(src)) await copyFile(src, path.join(ws, "sprites", `${hero}.png`));
     }
+    if (b.screen) {
+      // battle screen (turn / ATB, classic / backview) as an Easy Battle ui document; later documents win
+      const ui = Object.fromEntries(Object.entries(b.screen).filter(([, v]) => v !== undefined));
+      await writeJson(path.join(ws, "battles", "zz_kit_screen.easybattle.json"), { format: "easybattle/1", id: "zz_kit_screen", ui });
+      notes.push(`screen: ${Object.entries(ui).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+    }
     await cli(c, "battle", ["check"]);
     await cli(c, "battle", ["export", "--preset", "godot"]);
     await cli(c, "battle", ["export", "--preset", "pixi"]);
@@ -387,7 +404,7 @@ const STEPS: Record<ToolId, StepFn> = {
   },
 };
 
-function makeCtx(o: { root: string; name: string; seed: number; engine: Engine; tpl: Template; tools: Record<ToolId, ResolvedTool>; log: (l: string) => void; choices?: Record<string, unknown> }): Ctx {
+export function makeCtx(o: { root: string; name: string; seed: number; engine: Engine; tpl: Template; tools: Record<ToolId, ResolvedTool>; log: (l: string) => void; choices?: Record<string, unknown> }): Ctx {
   return {
     root: o.root,
     name: o.name,
@@ -526,6 +543,9 @@ export async function newProject(opts: NewProjectOptions): Promise<ProjectManife
   }
   manifest.ok = manifest.steps.every((s) => s.ok);
   await writeJson(path.join(root, "easykit.project.json"), manifest);
+  // the same game as a game.easy.json manifest, for `easy build`
+  const gm = templateToManifest(tpl, { name: opts.name, engine, seed, font: tpl.font?.dialogue, ship: { targets: ["web"], release: "0.1.0" } });
+  await writeJson(path.join(root, MANIFEST_FILE), gm);
   await writeProjectReadme(ctx, manifest);
   await writeFile(path.join(root, ".gitignore"), ".easy/*/exports/\n.easy/*/node_modules/\ngodot/.godot/\n*.import\n");
   return manifest;

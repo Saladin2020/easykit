@@ -1,0 +1,906 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string",
+      "const": "easy-game/1"
+    },
+    "game": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,47}$"
+        },
+        "title": {
+          "type": "object",
+          "properties": {
+            "th": {
+              "type": "string",
+              "minLength": 1
+            },
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ms": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "th",
+            "en",
+            "ms"
+          ]
+        },
+        "setting": {
+          "type": "object",
+          "properties": {
+            "th": {
+              "type": "string",
+              "minLength": 1
+            },
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ms": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "th",
+            "en"
+          ]
+        },
+        "engine": {
+          "default": "both",
+          "type": "string",
+          "enum": [
+            "godot",
+            "pixi",
+            "both"
+          ]
+        },
+        "font": {
+          "default": "makham-16",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "seed": {
+          "default": 1,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "viewport": {
+          "default": {
+            "width": 480,
+            "height": 270
+          },
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "height": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "width",
+            "height"
+          ]
+        },
+        "base": {
+          "default": "village_delivery",
+          "type": "string",
+          "const": "village_delivery"
+        },
+        "locales": {
+          "default": [
+            "th",
+            "en",
+            "ms"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "th",
+              "en",
+              "ms"
+            ]
+          }
+        }
+      },
+      "required": [
+        "name",
+        "title"
+      ]
+    },
+    "sprites": {
+      "type": "object",
+      "properties": {
+        "player": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "palette": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "cast": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "recolor": {
+                "type": "string"
+              },
+              "map": {
+                "type": "string"
+              },
+              "at": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "facing": {
+                "type": "string",
+                "enum": [
+                  "front",
+                  "back",
+                  "left",
+                  "right"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "base"
+            ]
+          }
+        },
+        "side": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "recolor": {
+                "type": "string"
+              },
+              "map": {
+                "type": "string"
+              },
+              "at": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "facing": {
+                "type": "string",
+                "enum": [
+                  "front",
+                  "back",
+                  "left",
+                  "right"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "base"
+            ]
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "player",
+        "palette",
+        "cast"
+      ]
+    },
+    "portraits": {
+      "type": "object",
+      "properties": {
+        "sets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "from": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "th": {
+                "type": "string"
+              },
+              "en": {
+                "type": "string"
+              },
+              "ms": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "from",
+              "th",
+              "en",
+              "ms"
+            ]
+          }
+        },
+        "keep": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "sets"
+      ]
+    },
+    "scenes": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            },
+            "cameraRange": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "actor": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          },
+          "required": [
+            "id",
+            "cameraRange",
+            "actor"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "title"
+      ]
+    },
+    "tilemaps": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "main"
+      ]
+    },
+    "npcs": {
+      "type": "object",
+      "properties": {
+        "roles": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "quest",
+                  "shop",
+                  "bark"
+                ]
+              },
+              "speaker": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "shop": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          }
+        },
+        "schedules": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "start": {
+          "type": "string",
+          "pattern": "^\\d\\d:\\d\\d$"
+        },
+        "secondsPerMinute": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "roles"
+      ]
+    },
+    "dialogue": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "style": {
+          "default": "teak",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "segments": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "main",
+        "segments"
+      ]
+    },
+    "quests": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "quest": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "main"
+      ]
+    },
+    "items": {
+      "type": "object",
+      "properties": {
+        "shop": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "halalShops": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "shop"
+      ]
+    },
+    "battle": {
+      "type": "object",
+      "properties": {
+        "table": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "enemies": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "zone": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "culture": {
+          "default": "thai",
+          "type": "string"
+        },
+        "ground": {
+          "default": "C",
+          "type": "string"
+        },
+        "party": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              }
+            },
+            "required": [
+              "id",
+              "level"
+            ]
+          }
+        },
+        "heroSheets": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "firstSeed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "timing": {
+          "default": "turn",
+          "type": "string",
+          "enum": [
+            "turn",
+            "atb"
+          ]
+        },
+        "atbMode": {
+          "default": "wait",
+          "type": "string",
+          "enum": [
+            "wait",
+            "active"
+          ]
+        },
+        "layout": {
+          "default": "classic",
+          "type": "string",
+          "enum": [
+            "classic",
+            "backview"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "rows",
+            "cards",
+            "none"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "table",
+        "zone",
+        "party"
+      ]
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "screen": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "theme": {
+          "default": "teak",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "screen"
+      ]
+    },
+    "fx": {
+      "type": "object",
+      "properties": {
+        "seeded": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "from": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "id",
+              "from"
+            ]
+          }
+        },
+        "export": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "export"
+      ]
+    },
+    "sfx": {
+      "type": "object",
+      "properties": {
+        "bank": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "seeded": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "preset": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "id",
+              "preset"
+            ]
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "bank"
+      ]
+    },
+    "music": {
+      "type": "object",
+      "properties": {
+        "seeded": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              },
+              "from": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "required": [
+              "id",
+              "from"
+            ]
+          }
+        },
+        "export": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "world": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "shop": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "export",
+        "world",
+        "shop"
+      ]
+    },
+    "anim": {
+      "type": "object",
+      "properties": {
+        "cutscene": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "cutscene"
+      ]
+    },
+    "save": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "schema"
+      ]
+    },
+    "ship": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "default": [
+            "web"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "web",
+              "windows",
+              "linux",
+              "android"
+            ]
+          }
+        },
+        "release": {
+          "default": "0.1.0",
+          "type": "string"
+        },
+        "itch": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+\\/[a-z0-9_-]+$"
+        },
+        "androidPackage": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "format",
+    "game",
+    "sprites",
+    "scenes",
+    "tilemaps",
+    "npcs",
+    "dialogue",
+    "quests",
+    "items",
+    "ui",
+    "fx",
+    "sfx",
+    "music",
+    "anim",
+    "save"
+  ],
+  "additionalProperties": false,
+  "$id": "https://github.com/Saladin2020/easykit/schema/game.easy.schema.json",
+  "title": "Easy Suite game manifest (game.easy.json)"
+}

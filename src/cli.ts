@@ -7,10 +7,14 @@ import { doctor, formatDoctor } from "./lib/doctor.js";
 import { shipProject } from "./lib/ship.js";
 import { exists } from "./lib/fsutil.js";
 import { ENGINES, TEMPLATES, newProject, projectStatus, rebuildProject, type Engine } from "./lib/pipeline.js";
-import { KIT_PORTS, TOOLS, TOOL_IDS } from "./lib/tools.js";
+import { KIT_PORTS, TOOLS, TOOL_IDS, isToolId, type ToolId } from "./lib/tools.js";
+import { buildProject, validateProject } from "./lib/build.js";
+import { initManifest } from "./lib/init.js";
+import { MANIFEST_FILE } from "./lib/manifest.js";
+import { formatIssue } from "./lib/validate.js";
 
 const program = new Command();
-program.name("easykit").description("Easy Kit — one CLI / MCP server / dashboard over the 17 Easy tools").version("0.1.0");
+program.name(path.basename(process.argv[1] ?? "").startsWith("easy.") || path.basename(process.argv[1] ?? "") === "easy" ? "easy" : "easykit").description("Easy Kit — one CLI / MCP server / dashboard over the 17 Easy tools; `easy build` turns game.easy.json into a game").version("0.1.0");
 
 const print = (json: boolean, data: unknown, text: () => string) => console.log(json ? JSON.stringify(data, null, 2) : text());
 
@@ -44,14 +48,61 @@ program
 
 program
   .command("build")
-  .description("Re-assemble godot/ and web/ from the tool exports in <project>/.easy")
-  .argument("<project>")
-  .option("--engine <engine>", "godot | pixi | both")
-  .option("--font <id>", "Opt in to another pixel font for HUD + dialogue, e.g. makham-16 (default: keep the project's font)")
+  .description(`Build the game described by ${MANIFEST_FILE}: every Easy tool in dependency order, unchanged steps skipped, then Godot / Pixi assembly and BUILD-REPORT.md. Without ${MANIFEST_FILE}: re-assemble godot/ and web/ from <project>/.easy`)
+  .argument("[project]", "Project folder", ".")
+  .option("--engine <engine>", "godot | pixi | both (default: the manifest's)")
+  .option("--force", "Rebuild every step even if unchanged")
+  .option("--only <tools>", "Comma-separated tools to rebuild (others are skipped)")
+  .option("--ship", "Also package the manifest's ship targets locally with Easy Ship (never uploads)")
+  .option("--font <id>", "(projects without game.easy.json) opt in to another pixel font")
   .option("--json")
   .action(async (project: string, o) => {
-    const m = await rebuildProject(path.resolve(project), { engine: o.engine, font: o.font });
-    print(!!o.json, m, () => m.steps.filter((s) => s.tool === "kit").map((s) => `${s.title}: ${s.notes.join("; ")}`).join("\n"));
+    const root = path.resolve(project);
+    if (!(await exists(path.join(root, MANIFEST_FILE)))) {
+      const m = await rebuildProject(root, { engine: o.engine, font: o.font });
+      print(!!o.json, m, () => [...m.steps.filter((s) => s.tool === "kit").map((s) => `${s.title}: ${s.notes.join("; ")}`), `(no ${MANIFEST_FILE}: run \`easy init --from ${project}\` to build from a manifest)`].join("\n"));
+      return;
+    }
+    if (o.engine && !(ENGINES as readonly string[]).includes(o.engine)) throw new Error("--engine must be godot, pixi or both");
+    const only = o.only ? String(o.only).split(",").map((t: string) => t.trim()) : undefined;
+    const bad = only?.filter((t) => !isToolId(t));
+    if (bad?.length) throw new Error(`unknown tool(s) in --only: ${bad.join(", ")}`);
+    const r = await buildProject(root, { engine: o.engine, force: !!o.force, only: only as ToolId[] | undefined, ship: !!o.ship, log: o.json ? undefined : (l) => console.error(l) });
+    print(!!o.json, r, () =>
+      [
+        ...r.issues.map(formatIssue),
+        ...r.steps.map((s) => `  ${{ built: "built  ", skipped: "skipped", failed: "FAILED ", "not-installed": "absent " }[s.status]} ${(s.tool === "kit" ? "Easy Kit" : TOOLS[s.tool].name).padEnd(13)} ${s.title} (${s.reason})${s.error ? `\n    ${s.error.split("\n").join("\n    ")}` : ""}`),
+        `${r.ok ? "ok" : "FAILED"}: ${r.steps.filter((s) => s.status === "built").length} built, ${r.steps.filter((s) => s.status === "skipped").length} skipped in ${(r.ms / 1000).toFixed(1)} s — report: ${path.join(root, "BUILD-REPORT.md")}`,
+      ].join("\n"),
+    );
+    if (!r.ok) process.exitCode = 1;
+  });
+
+program
+  .command("validate")
+  .description(`Check ${MANIFEST_FILE}: schema, then every cross-reference (quest items, NPC portraits, battle enemies, dialogue speakers, halal shops…) against the tool workspaces`)
+  .argument("[project]", "Project folder", ".")
+  .option("--no-prepare", "Do not create missing tool workspaces or copy sources (references into missing workspaces are not checked)")
+  .option("--json")
+  .action(async (project: string, o) => {
+    const r = await validateProject(path.resolve(project), { init: o.prepare });
+    const errors = r.issues.filter((i) => i.severity === "error").length;
+    print(!!o.json, r, () => [...r.issues.map(formatIssue), `${r.ok ? "ok" : "invalid"}: ${errors} error(s), ${r.issues.length - errors} warning(s)`].join("\n"));
+    if (!r.ok) process.exitCode = 1;
+  });
+
+program
+  .command("init")
+  .description(`Write ${MANIFEST_FILE}: for a new game in <dir>, or --from an existing Easy Kit project (into that project unless --out)`)
+  .argument("[dir]", "Folder for the manifest")
+  .option("--from <project>", "Existing Easy Kit project (easykit.project.json) to describe")
+  .option("--name <name>", "Game / folder name (ASCII)")
+  .option("--template <id>", "Kit base for a new game", "village_delivery")
+  .option("--force", `Overwrite an existing ${MANIFEST_FILE}`)
+  .action(async (dir: string | undefined, o) => {
+    const target = dir ?? o.from ?? ".";
+    const { file } = await initManifest({ dir: target, from: o.from, name: o.name, template: o.template, force: !!o.force });
+    console.log(`wrote ${file}\nnext:  easy validate ${target} && easy build ${target}`);
   });
 
 program
