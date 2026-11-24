@@ -27,3 +27,19 @@ jobs:
       - run: npm test
       - name: MCP + CLI smoke tests
         run: npm run smoke
+
+  windows:
+    # Easy Studio targets Windows desktops: build, run the API tests and boot `easy studio` there.
+    runs-on: windows-latest
+    env:
+      EASYKIT_SUITE_DIR: ${{ github.workspace }}\.no-suite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx vitest run test/studio.test.ts test/server.test.ts
+      - run: npm run smoke:studio-boot

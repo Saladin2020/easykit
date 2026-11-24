@@ -2,6 +2,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +11,7 @@ import { doctor } from "../lib/doctor.js";
 import { ENGINES, NAME_RE, TEMPLATES, loadTemplate, newProject, projectStatus, type Engine } from "../lib/pipeline.js";
 import { KIT_PORTS, TOOLS, TOOL_IDS } from "../lib/tools.js";
 import { DEV_UI_ORIGINS, checkRequest, resolveToken } from "../shared/requestGuard.js";
+import { DIR_RE, mountStudio, type Launcher } from "./studio.js";
 
 export interface CreateAppOptions {
   projects: string;
@@ -17,6 +19,9 @@ export interface CreateAppOptions {
   dev?: boolean;
   host?: string;
   token?: string;
+  /** Desktop-app launcher for Studio "open in Godot / Aseprite" (tests inject a fake). */
+  launch?: Launcher;
+  env?: NodeJS.ProcessEnv;
 }
 
 const TOKEN_COOKIE = "easykit_token";
@@ -83,10 +88,12 @@ export function createApp(options: CreateAppOptions): Hono {
     }
   });
 
+  mountStudio(app, { projects, launch: options.launch, env: options.env });
+
   // Play a project's web build inside the dashboard: /play/<name>/…
   app.get("/play/:name/*", async (c) => {
     const name = c.req.param("name");
-    if (!NAME_RE.test(name)) return c.text("bad project name", 400);
+    if (!DIR_RE.test(name)) return c.text("bad project name", 400);
     const base = path.join(projects, name, "web");
     const rel = decodeURIComponent(c.req.path.slice(`/play/${name}/`.length)) || "index.html";
     const file = path.resolve(base, rel);
@@ -130,11 +137,25 @@ export function defaultWebRoot(): string {
   return candidates.find((p) => existsSync(path.join(p, "index.html"))) ?? candidates[1]!;
 }
 
-export async function startServer(o: { port: number; host: string; projects: string; dev?: boolean }): Promise<void> {
+export async function startServer(o: { port: number; host: string; projects: string; dev?: boolean; studio?: boolean; open?: boolean }): Promise<void> {
   const token = resolveToken(o.host);
   const app = createApp({ projects: o.projects, webRoot: defaultWebRoot(), dev: o.dev, host: o.host, token });
   serve({ fetch: app.fetch, port: o.port, hostname: o.host }, () => {
-    console.error(`Easy Kit dashboard http://${o.host}:${o.port}${token ? `/?token=${token}` : ""}`);
+    const url = `http://${o.host}:${o.port}/${o.studio ? "#/studio" : ""}${token ? `?token=${token}` : ""}`;
+    console.error(`${o.studio ? "Easy Studio" : "Easy Kit dashboard"} ${url}`);
+    if (o.open) openBrowser(url);
     console.error(`Projects ${o.projects}`);
   });
+}
+
+/** Open `url` in the default browser (Windows / macOS / Linux), best effort. */
+export function openBrowser(url: string): void {
+  const [cmd, args] = process.platform === "win32" ? ["explorer.exe", [url]] : process.platform === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
+  try {
+    const child = spawn(cmd, args as string[], { detached: true, stdio: "ignore" });
+    child.on("error", () => undefined);
+    child.unref();
+  } catch {
+    /* no browser available */
+  }
 }

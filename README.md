@@ -157,6 +157,7 @@ VillageDemo/
 | `easykit status [path]` | One project or every project in a folder |
 | `easykit ship <project> [--build] [--targets web,linux,windows,android] [--release V] [--itch user/game] [--json]` | Easy Ship release configs + plan; `--build` builds and zips locally. Never uploads (run `easyship ship <id> --upload` yourself) |
 | `easykit tools` | The 17 tools, roles and ports |
+| `easy studio [projectsDir] [--port 8908] [--open]` | **Easy Studio**: local web UI over `game.easy.json` — project list, schema-generated form + raw JSON, live Thai/English validation with jump-to-field, streamed build log, Pixi preview + check screenshots, open in Godot / Aseprite, ship locally. Always binds 127.0.0.1 ([docs/STUDIO.md](docs/STUDIO.md)) |
 | `easykit serve [--port 8908] [--projects DIR] [--dev]` | Dashboard: doctor table, new-project form, project list, play the web build (below) |
 | `easykit mcp [--http] [--port 8909] [--workspace DIR] [--project DIR]` | Unified MCP server |
 
@@ -180,8 +181,10 @@ use. `EASYKIT_MCP_TOOLS=save,fx` limits the proxy, `none` turns it off. See [doc
 Tool lookup, first match wins: `EASY<TOOL>_HOME` (e.g. `EASYSAVE_HOME`) → `tools.<id>` in `easykit.config.json`
 (`$EASYKIT_CONFIG`, `./easykit.config.json`, then the kit folder) → `<suiteDir>/easy<id>` (default: the folder
 holding Easy Kit; Easy Sprite also tries `easysprite-work`). A folder only counts if its `package.json` name matches.
-Copy [easykit.config.example.json](easykit.config.example.json). Godot: `EASYKIT_GODOT`, `GODOT`, `godot` in the
-config, or `godot` on `PATH`; Chrome: `chrome` in the config or the usual install paths.
+Copy [easykit.config.example.json](easykit.config.example.json). Godot: `EASYKIT_GODOT`, `GODOT_BIN`, `GODOT`, `godot` in the
+config, `godot4` / `godot` on `PATH`, then the usual installs (Windows Chocolatey `C:\ProgramData\chocolatey\bin\godot.exe`);
+Aseprite (Studio only): `ASEPRITE_BIN`, `aseprite` in the config, `PATH`, then Steam / standard installs; Chrome: `EASYKIT_CHROME`,
+`chrome` in the config or the usual install paths; Python for the web check: `EASYKIT_PYTHON` (default `python3`, `python` on Windows).
 
 Ports (unique across the suite): dashboard **8908**, MCP HTTP **8909**, Vite **5187**, web check server 8989.
 Non-loopback hosts need the token printed at start (`EASYKIT_TOKEN` to set one).

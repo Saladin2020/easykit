@@ -1,7 +1,7 @@
-import { execFileSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { findGodot } from "./doctor.js";
+import { findChrome, findGodot, which } from "./doctor.js";
 import { kitRoot, loadKitConfig } from "./tools.js";
 
 export interface CheckRun {
@@ -52,12 +52,7 @@ export function xvfbGodot(godot: string, godotArgs: string[], useXvfb = true): {
 }
 
 function hasXvfb(): boolean {
-  try {
-    execFileSync("sh", ["-c", "command -v xvfb-run"], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
+  return process.platform === "linux" && which("xvfb-run") !== null;
 }
 
 async function godotOnce(run: CommandRunner, godot: string, dir: string, godotArgs: string[], timeoutMs: number, useXvfb: boolean): Promise<CommandResult> {
@@ -119,7 +114,11 @@ export async function checkWeb(project: string, opts: { out?: string; port?: num
   const script = path.join(kitRoot(), "scripts", "check-web.py");
   if (!existsSync(path.join(project, "web", "index.html"))) return { name: "web", ok: false, skipped: "no web/ build", code: null, ms: 0, tail: "" };
   const args = [script, project, "--port", String(opts.port ?? 8989), ...(opts.out ? ["--out", opts.out] : []), ...(opts.frames ? ["--frames"] : [])];
-  const r = await (opts.run ?? runCommand)("python3", args, { cwd: project, timeoutMs: 300_000 });
+  // Windows ships `python` (or the `py` launcher), not `python3`; override with EASYKIT_PYTHON.
+  const python = process.env.EASYKIT_PYTHON ?? (process.platform === "win32" ? "python" : "python3");
+  const chrome = findChrome();
+  const r = await (opts.run ?? runCommand)(python, args, { cwd: project, timeoutMs: 300_000, env: chrome ? { EASYKIT_CHROME: chrome } : undefined });
+  if (r.code === -1 && /ENOENT/.test(r.out)) return { name: "web headless check", ok: true, skipped: `${python} not found (set EASYKIT_PYTHON)`, code: r.code, ms: r.ms, tail: tail(r.out, 5) };
   if (/No module named 'playwright'/.test(r.out)) return { name: "web headless check", ok: true, skipped: "python playwright not installed", code: r.code, ms: r.ms, tail: tail(r.out, 5) };
   return { name: "web headless check", ok: r.code === 0 && /EASYKIT WEB OK/.test(r.out), code: r.code, ms: r.ms, tail: tail(r.out, 60) };
 }
