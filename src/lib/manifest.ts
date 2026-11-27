@@ -53,6 +53,10 @@ export const GameManifestSchema = z
       engine: z.enum(["godot", "pixi", "both"]).default("both"),
       /** Easy Font id for the HUD and dialogue (small labels keep makham-8). */
       font: id().default("makham-16"),
+      /** Easy Font id for small labels (quest box, clock, key hints). Default makham-8; sarabun-px-12 is more legible. */
+      fontSmall: id().optional(),
+      /** Easy Font id for dialogue boxes when it should differ from `font`. */
+      fontDialogue: id().optional(),
       seed: z.number().int().min(0).default(1),
       viewport: z.object({ width: z.number().int().positive(), height: z.number().int().positive() }).default({ width: 480, height: 270 }),
       /** Kit glue (game scripts) the build uses; the only one today is village_delivery. */
@@ -237,7 +241,7 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     npcs: m.npcs.roles,
     quest: { id: m.quests.main, main: m.quests.quest ?? m.quests.main },
     ...(m.quests.deliveries ? { deliveries: m.quests.deliveries } : {}),
-    font: { hud: m.game.font, small: "makham-8", dialogue: m.game.font },
+    font: { hud: m.game.font, small: m.game.fontSmall ?? "makham-8", dialogue: m.game.fontDialogue ?? m.game.font },
     ui: { doc: m.ui.screen, theme: m.ui.theme },
     sfx: { bank: m.sfx.bank, seeded: m.sfx.seeded },
     fx: { seeded: m.fx.seeded, export: m.fx.export },
