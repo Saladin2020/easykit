@@ -35,6 +35,7 @@ export const STEP_DEPS: Record<ToolId, ToolId[]> = {
   items: [],
   battle: ["sprite"],
   save: ["dialogue", "quest", "ui", "items"],
+  action: ["battle"],
   ship: [],
 };
 
@@ -56,6 +57,7 @@ const STEP_INPUTS: Record<ToolId, Array<keyof Template>> = {
   items: ["items"],
   battle: ["battle"],
   save: ["save", "dialogue", "quest", "ui"],
+  action: ["action", "systems", "battle"],
   ship: [],
 };
 
@@ -112,7 +114,7 @@ export function sourceDir(tool: ToolId, file: string): string | undefined {
 
 const SECTION_OF: Partial<Record<ToolId, keyof GameManifest>> = {
   sprite: "sprites", portrait: "portraits", scene: "scenes", tilemap: "tilemaps", npc: "npcs", dialogue: "dialogue", quest: "quests",
-  items: "items", battle: "battle", ui: "ui", fx: "fx", sfx: "sfx", music: "music", anim: "anim", save: "save",
+  items: "items", battle: "battle", ui: "ui", fx: "fx", sfx: "sfx", music: "music", anim: "anim", save: "save", action: "action",
 };
 export function sourcesOf(m: GameManifest, tool: ToolId): string[] {
   const s = SECTION_OF[tool] ? (m[SECTION_OF[tool]!] as { sources?: string[] } | undefined) : undefined;

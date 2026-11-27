@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** The 17 Easy tools Easy Kit drives, in pipeline order (Easy Ship last: it packages a finished game). */
-export const TOOL_IDS = ["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "ship"] as const;
+export const TOOL_IDS = ["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "action", "ship"] as const;
 export type ToolId = (typeof TOOL_IDS)[number];
 /** The original twelve: `easykit new` needs all of them. */
 export const CORE_TOOL_IDS = ["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"] as const satisfies readonly ToolId[];
@@ -45,6 +45,7 @@ export const TOOLS: Record<ToolId, ToolSpec> = {
   npc: { id: "npc", pkg: "easynpc", name: "Easy NPC", env: "EASYNPC", role: "villager daily schedules, clock, day / night, affinity", ports: { serve: 8958, mcp: 8959, vite: 5195 }, cli: true, aliases: ["easy-new/easynpc"], optional: true },
   font: { id: "font", pkg: "easyfont", name: "Easy Font", env: "EASYFONT", role: "มะขาม Thai / Latin / Malay pixel font for HUD + dialogue", ports: { serve: 8948, mcp: 8949, vite: 5194 }, cli: true, aliases: ["easy-new/easyfont"], optional: true },
   battle: { id: "battle", pkg: "easybattle", name: "Easy Battle", env: "EASYBATTLE", role: "turn-based field encounters with the player as hero", ports: { serve: 8938, mcp: 8939, vite: 5193 }, cli: true, aliases: ["easy-new/easybattle"], optional: true },
+  action: { id: "action", pkg: "easyaction", name: "Easy Action", env: "EASYACTION", role: "side-view jump / climb physics + real-time action combat on Easy Battle stats", ports: { serve: 8988, mcp: 8989, vite: 5198 }, cli: true, aliases: ["easy-new/easyaction"], optional: true },
   ship: { id: "ship", pkg: "easyship", name: "Easy Ship", env: "EASYSHIP", role: "release builds: web / Windows / Linux / Android zips (easykit ship)", ports: { serve: 8978, mcp: 8979, vite: 5197 }, cli: true, aliases: ["easy-new/easyship"], optional: true },
 };
 

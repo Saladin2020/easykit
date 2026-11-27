@@ -92,6 +92,7 @@ export const SECTION_NAMES: Record<string, [string, string]> = {
   items: ["ไอเท็มและร้านค้า", "Items & shops"],
   battle: ["การต่อสู้", "Battle"],
   systems: ["ระบบเกม", "Game systems"],
+  action: ["Easy Action (กระโดด ปีน ต่อสู้เรียลไทม์)", "Easy Action (jump, climb, real-time fights)"],
   ui: ["หน้าจอ UI", "UI"],
   fx: ["เอฟเฟกต์", "Effects"],
   sfx: ["เสียงประกอบ", "Sound effects"],

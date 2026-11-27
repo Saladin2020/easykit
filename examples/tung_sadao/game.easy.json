@@ -377,6 +377,22 @@
     "minimap": {
       "cell": 2,
       "worldMap": true
+    },
+    "platformer": {
+      "levels": [
+        "ban_na_di_rooftops"
+      ]
+    },
+    "actionCombat": {
+      "encounters": [
+        "field_pests"
+      ],
+      "party": [
+        {
+          "id": "ton",
+          "level": 3
+        }
+      ]
     }
   },
   "ship": {

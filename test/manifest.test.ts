@@ -20,7 +20,7 @@ const parse = (raw: unknown) => {
 /** A catalog shaped like a freshly initialised village_delivery project (+ the example's halal stall). */
 function catalog(over: Partial<Catalog> = {}): Catalog {
   return {
-    ready: new Set<ToolId>(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "items", "battle", "ui", "fx", "sfx", "music", "anim", "save", "font"]),
+    ready: new Set<ToolId>(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "items", "battle", "ui", "fx", "sfx", "music", "anim", "save", "font", "action"]),
     spriteProjects: new Set(["teacher", "little_boy", "market_seller", "roti_seller", "hijab_teacher", "kopiah_boy", "pak_cik_jubah", "grandpa", "village_farmer", "side_little_boy", "side_market_seller", "side_kopiah_boy", "side_hijab_teacher", "side_grandma"]),
     portraits: new Set(["town_monk", "town_kid", "town_vendor", "town_hijab_teacher"]),
     scenes: new Set(["harmony_town"]),
@@ -49,7 +49,7 @@ function catalog(over: Partial<Catalog> = {}): Catalog {
     cutscenes: new Set(["village_morning_delivery"]),
     saveSchemas: new Set(["village_delivery"]),
     fonts: new Set(["makham-8", "makham-12", "makham-16"]),
-    systems: { lifeSkills: new Set(["farming", "fishing", "cooking"]), crops: new Set(["morning_glory"]), fishing: new Set(["canal"]), heroTrees: new Set(["ton", "adam"]), achievements: new Map([["village_delivery", ["first_job"]]]), heartNpcs: new Set(["fatimah"]) },
+    systems: { lifeSkills: new Set(["farming", "fishing", "cooking"]), crops: new Set(["morning_glory"]), fishing: new Set(["canal"]), heroTrees: new Set(["ton", "adam"]), achievements: new Map([["village_delivery", ["first_job"]]]), heartNpcs: new Set(["fatimah"]), actionDocs: new Map([["three_towns", { levels: new Set(["ban_na_di_rooftops"]), encounters: new Set(["monkey_raid", "field_pests"]) }]]) },
     ...over,
   };
 }
@@ -226,23 +226,29 @@ describe("systems section", () => {
       relationships: { npcs: ["fatimah", "adam", "nobody"] },
       achievements: { quests: ["village_delivery", "other"] },
       followers: ["nobody_sprite"],
-      platformer: true,
+      platformer: { levels: ["ban_na_di_rooftops", "moon_base"] },
+      actionCombat: { encounters: ["monkey_raid", "dragon"], party: [{ id: "ton", level: 3 }, { id: "ghost", level: 1 }] },
     });
     const issues = crossCheck(m, catalog());
     const errs = issues.filter((i) => i.severity === "error").map((i) => i.path);
-    expect(errs).toEqual(expect.arrayContaining(["systems.lifeSkills.skills[1]", "systems.lifeSkills.crops[0]", "systems.skillTrees.heroes[1]", "systems.relationships.npcs[2]", "systems.achievements.quests[1]", "systems.followers[0]"]));
+    expect(errs).toEqual(expect.arrayContaining(["systems.lifeSkills.skills[1]", "systems.lifeSkills.crops[0]", "systems.skillTrees.heroes[1]", "systems.relationships.npcs[2]", "systems.achievements.quests[1]", "systems.followers[0]", "systems.platformer.levels[1]", "systems.actionCombat.encounters[1]", "systems.actionCombat.party[1].id"]));
+    expect(errs).not.toContain("systems.platformer.levels[0]");
     expect(errs).not.toContain("systems.lifeSkills.skills[0]");
     const warns = issues.filter((i) => i.severity === "warning").map((i) => i.path);
-    expect(warns).toEqual(expect.arrayContaining(["systems.relationships.npcs[1]", "systems.platformer"]));
+    expect(warns).toEqual(expect.arrayContaining(["systems.relationships.npcs[1]"]));
   });
   it("writes the runtime systems data with the exported weather effects", async () => {
     const m = await withSystems({ calendar: {}, weather: {} });
     expect(systemsData(m.systems, ["rain", "storm_rain", "coin_burst"])).toMatchObject({ format: "easy-systems/1", enabled: ["calendar", "weather"], weather: { fx: ["rain", "storm_rain"] } });
     expect(systemsData(undefined, [])).toEqual({ format: "easy-systems/1", enabled: [] });
+    const a = await withSystems({ platformer: { levels: ["ban_na_di_rooftops"] }, actionCombat: true });
+    expect(systemsData(a.systems, [], { doc: "three_towns", file: "res://easyaction/easyaction.json", battleDb: "res://easyaction/battle_db.json" })).toMatchObject({ enabled: ["platformer", "actionCombat"], platformer: { levels: ["ban_na_di_rooftops"], file: "res://easyaction/easyaction.json" }, actionCombat: { encounters: [], battleDb: "res://easyaction/battle_db.json" } });
   });
   it("doctor probes report missing runtimes per system", () => {
     const r = probeSystems(() => null);
     expect(r.find((s) => s.id === "calendar")).toMatchObject({ ok: false, tools: ["npc"] });
-    expect(r.find((s) => s.id === "platformer")?.missing).toEqual(["not implemented in the Easy tools yet"]);
+    expect(r.find((s) => s.id === "platformer")).toMatchObject({ ok: false, tools: ["action"] });
+    expect(r.find((s) => s.id === "actionCombat")?.tools).toEqual(["action", "battle"]);
+    expect(r.every((s) => !s.missing.includes("not implemented in the Easy tools yet"))).toBe(true);
   });
 });

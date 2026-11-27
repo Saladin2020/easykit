@@ -49,6 +49,7 @@ export interface StudioInfo {
 export type JsonSchema = {
   type?: string;
   properties?: Record<string, JsonSchema>;
+  anyOf?: JsonSchema[];
   required?: string[];
   items?: JsonSchema | false;
   prefixItems?: JsonSchema[];

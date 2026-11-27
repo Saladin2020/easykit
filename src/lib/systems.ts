@@ -48,8 +48,11 @@ export const SYSTEM_PROBES: Record<SystemId, Array<{ tool: ToolId; file: string;
   achievements: [{ tool: "quest", file: "runtime/pixi/easyquest-manager.js", marker: /achievement_unlocked/ }],
   followers: [{ tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function followerTiles\b/ }],
   minimap: [{ tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function minimapGrid\b/ }],
-  platformer: [],
-  actionCombat: [],
+  platformer: [{ tool: "action", file: "runtime/pixi/easyaction-core.js", marker: /function stepBody\b/ }],
+  actionCombat: [
+    { tool: "action", file: "runtime/pixi/easyaction-core.js", marker: /(?:class Skirmish\b|Skirmish = class\b)/ },
+    { tool: "battle", file: "runtime/pixi/easybattle-core.js", marker: /function treeUnlock\b/ },
+  ],
 };
 
 export interface SystemReport {
@@ -60,7 +63,7 @@ export interface SystemReport {
   missing: string[];
 }
 
-/** `easy doctor`: does each installed tool runtime provide the systems? (platformer / actionCombat: not built yet). */
+/** `easy doctor`: does each installed tool runtime provide the systems? */
 export function probeSystems(home: (t: ToolId) => string | null): SystemReport[] {
   return SYSTEM_IDS.map((id) => {
     const probes = SYSTEM_PROBES[id];
@@ -84,7 +87,7 @@ export function enabledSystems(s: Systems | undefined): SystemId[] {
 }
 
 /** What the Godot / Pixi games read: kit/systems.json. */
-export function systemsData(s: Systems | undefined, fxExport: string[]): Record<string, unknown> {
+export function systemsData(s: Systems | undefined, fxExport: string[], action: { doc: string; file: string; battleDb: string } = { doc: "three_towns", file: "action/easyaction.json", battleDb: "action/battle_db.json" }): Record<string, unknown> {
   if (!s) return { format: "easy-systems/1", enabled: [] };
   const weatherFx = ["rain", "storm_rain", "fog_drift", "wind_gust"].filter((x) => fxExport.includes(x));
   return {
@@ -98,6 +101,8 @@ export function systemsData(s: Systems | undefined, fxExport: string[]): Record<
     ...(s.achievements ? { achievements: s.achievements } : {}),
     ...(s.followers?.length ? { followers: s.followers } : {}),
     ...(s.minimap ? { minimap: s.minimap } : {}),
+    ...(s.platformer ? { platformer: { doc: action.doc, file: action.file, levels: typeof s.platformer === "object" ? s.platformer.levels : [] } } : {}),
+    ...(s.actionCombat ? { actionCombat: { doc: action.doc, file: action.file, battleDb: action.battleDb, encounters: typeof s.actionCombat === "object" ? s.actionCombat.encounters : [], ...(typeof s.actionCombat === "object" && s.actionCombat.party ? { party: s.actionCombat.party } : {}) } } : {}),
   };
 }
 
@@ -145,7 +150,19 @@ export function checkSystems(m: GameManifest, c: Catalog): Issue[] {
     if (!cast.has(f)) err("systems.followers", `systems.followers[${i}]`, `ผู้ติดตาม "${f}" ไม่อยู่ใน sprites.cast`, `follower "${f}" is not in sprites.cast`);
     if (f === m.sprites.player) err("systems.followers", `systems.followers[${i}]`, "ผู้เล่นเป็นผู้ติดตามตัวเองไม่ได้", "the player cannot follow itself");
   }
-  for (const k of ["platformer", "actionCombat"] as const)
-    if (s[k]) warn(`systems.${k}`, `systems.${k}`, `${SYSTEM_NAMES[k].th}: ยังไม่มีในชุดเครื่องมือ Easy (ข้าม)`, `${SYSTEM_NAMES[k].en}: not in the Easy tools yet (skipped)`);
+  if ((s.platformer || s.actionCombat) && c.ready.has("action")) {
+    const docId = m.action?.doc ?? "three_towns";
+    const doc = c.systems.actionDocs.get(docId);
+    if (!doc) err("systems.action", "action.doc", `ไม่พบเอกสาร Easy Action "${docId}"`, `Easy Action document "${docId}" not found (have: ${list(c.systems.actionDocs.keys())})`);
+    else {
+      if (typeof s.platformer === "object")
+        for (const [i, l] of s.platformer.levels.entries()) if (!doc.levels.has(l)) err("systems.platformer", `systems.platformer.levels[${i}]`, `ไม่พบด่าน "${l}" ใน ${docId}`, `level "${l}" not in ${docId} (have: ${list(doc.levels)})`);
+      if (typeof s.actionCombat === "object") {
+        for (const [i, e] of s.actionCombat.encounters.entries()) if (!doc.encounters.has(e)) err("systems.actionCombat", `systems.actionCombat.encounters[${i}]`, `ไม่พบการต่อสู้ "${e}" ใน ${docId}`, `encounter "${e}" not in ${docId} (have: ${list(doc.encounters)})`);
+        if (c.ready.has("battle")) for (const [i, h] of (s.actionCombat.party ?? []).entries()) if (!c.battle.heroes.has(h.id)) err("systems.actionCombat", `systems.actionCombat.party[${i}].id`, `ไม่พบฮีโร่ "${h.id}" ใน Easy Battle`, `hero "${h.id}" not found in Easy Battle`);
+      }
+    }
+  }
+  if (s.actionCombat && !m.battle) warn("systems.actionCombat", "battle", "การต่อสู้แบบเรียลไทม์ใช้ค่าพลังจาก Easy Battle (เพิ่มส่วน battle เพื่อใช้ฮีโร่ของเกม)", "real-time combat uses Easy Battle stats (add a battle section to fight with this game's heroes; the bundled sample is used otherwise)");
   return out;
 }

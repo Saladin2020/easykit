@@ -26,6 +26,7 @@ export function pixiSources(c: Ctx): Array<{ tool: ToolId; dir: string; to: stri
     { ...e("npc", "easynpc-pixi"), optional: true },
     { ...e("font", "easyfont-pixi"), optional: true },
     { ...e("battle", "easybattle-pixi"), optional: true },
+    { ...e("action", `${c.tpl.action?.doc ?? "three_towns"}-pixi`), optional: true },
   ];
 }
 
@@ -83,6 +84,6 @@ export async function assemblePixi(c: Ctx): Promise<PixiBuild> {
     cutsceneFile: `anim/cutscenes/${c.tpl.anim.cutscene}.json`,
     systemsFile: "kit/systems.json",
   });
-  await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export));
+  await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export, { doc: c.tpl.action?.doc ?? "three_towns", file: "action/easyaction.json", battleDb: "action/battle_db.json" }));
   return { dir: "web", files: (await walk(dest)).length, pixi, dialogue };
 }

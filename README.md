@@ -144,8 +144,10 @@ pixel font and a battle.
 | `achievements` | Easy Quest | `@achievement` lines in the listed quest files |
 | `followers` | Easy Tilemap | up to 3 cast members walk behind the player |
 | `minimap` | Easy Tilemap | corner minimap + world map |
+| `platformer` | Easy Action | side-view jump / climb / one-way platforms on Easy Scene streets; `true` or `{ levels: [...] }` from the `action.doc` document |
+| `actionCombat` | Easy Action + Easy Battle | real-time skirmishes on Easy Battle stats (the game's own heroes / enemies when `battle` is set); `true` or `{ encounters, party? }` |
 
-`easy validate` cross-checks them, `easy build` writes `kit/systems.json` for both engines (and `kit.json` → `systemsFile`), the Studio shows a **Game systems** section, and `easy doctor` lists which systems the installed tool versions provide. `platformer` / `actionCombat` are accepted but not built yet (validate warns).
+`easy validate` cross-checks them, `easy build` writes `kit/systems.json` for both engines (and `kit.json` → `systemsFile`), the Studio shows a **Game systems** section, and `easy doctor` lists which systems the installed tool versions provide. Platformer / action combat add an `action` build step. It exports the `action.doc` Easy Action document (default `three_towns`, extra documents via `action.sources`) to `web/action/` and `godot/easyaction/`.
 
 ## Project layout
 

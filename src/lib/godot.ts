@@ -135,6 +135,7 @@ export function godotSources(c: Ctx): GodotExportSource[] {
     { ...e("npc", "easynpc-godot"), optional: true },
     { ...e("font", "easyfont-godot"), optional: true },
     { ...e("battle", "easybattle-godot"), optional: true },
+    { ...e("action", `${c.tpl.action?.doc ?? "three_towns"}-godot`), optional: true },
   ];
 }
 
@@ -310,7 +311,7 @@ export async function assembleGodot(c: Ctx): Promise<GodotBuild> {
     theme: `res://easyui/themes/${c.tpl.ui.theme}.tres`,
     systemsFile: "res://kit/systems.json",
   });
-  await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export));
+  await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export, { doc: c.tpl.action?.doc ?? "three_towns", file: "res://easyaction/easyaction.json", battleDb: "res://easyaction/battle_db.json" }));
   await writeFile(path.join(dest, "icon.svg"), ICON_SVG);
   await writeFile(path.join(dest, "project.godot"), projectGodot({ name: c.name, autoloads, width: c.tpl.viewport.width, height: c.tpl.viewport.height, translations }));
   const files = (await walk(dest)).filter((f) => !f.startsWith(".godot/")).length;
