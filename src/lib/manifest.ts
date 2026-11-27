@@ -137,6 +137,18 @@ export const GameManifestSchema = z
         achievements: z.object({ quests: z.array(id()).default([]) }).strict().optional(),
         followers: z.array(id()).max(3).optional(),
         minimap: z.object({ cell: z.number().int().min(1).max(8).default(2), worldMap: z.boolean().default(true) }).strict().optional(),
+        /** Town life (DSK-5): Easy NPC light phases → Easy FX lighting overlay (dawn … late night, lamps). */
+        lighting: z.union([z.boolean(), z.object({ overlay: z.boolean().default(true), lamps: z.boolean().default(true) }).strict()]).optional(),
+        /** Shops open / closed by Easy NPC hours (closed twins from Easy Scene); ids are Easy NPC `shops`. */
+        shopHours: z.object({ shops: z.array(id()).default([]) }).strict().optional(),
+        /** Walk-in interiors (Easy Scene scenes: shop / station hall / platform / terminal), seller behind the counter. */
+        interiors: z.object({ scenes: z.array(id()).default([]) }).strict().optional(),
+        /** Flooding from the Easy NPC weather: water on streets (Easy FX) and the world map (Easy Tilemap), slower walking, NPCs indoors. */
+        flood: z.object({ overlay: z.boolean().default(true), affectsGameplay: z.boolean().default(true) }).strict().optional(),
+        /** Train timetables (Easy NPC transit lines): buy a ticket at the station counter, wait on the platform, board. */
+        trains: z.object({ lines: z.array(id()).default([]), ticketCounter: z.boolean().default(true) }).strict().optional(),
+        /** Flights (Easy NPC transit lines of kind flight) between Easy Tilemap airports next to these towns. */
+        flights: z.object({ airports: z.array(id()).default([]), lines: z.array(id()).default([]) }).strict().optional(),
         /** Easy Action: side-view jump / climb levels on Easy Scene streets (ids in the action document). */
         platformer: z.union([z.boolean(), z.object({ levels: z.array(id()).default([]) }).strict()]).optional(),
         /** Easy Action: real-time skirmishes on Easy Battle stats (encounter ids in the action document). */

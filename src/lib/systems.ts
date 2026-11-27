@@ -11,6 +11,7 @@
  *   achievements  Easy Quest @achievement
  *   followers     Easy Tilemap party followers on the overworld
  *   minimap       Easy Tilemap minimap + world map
+ *   lighting · shopHours · interiors · flood · trains · flights   town life (Easy NPC + Easy FX + Easy Scene + Easy Tilemap)
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -19,7 +20,7 @@ import type { GameManifest, Issue } from "./manifest.js";
 import type { ToolId } from "./tools.js";
 
 export type Systems = NonNullable<GameManifest["systems"]>;
-export const SYSTEM_IDS = ["calendar", "weather", "lifeSkills", "skillTrees", "relationships", "achievements", "followers", "minimap", "platformer", "actionCombat"] as const;
+export const SYSTEM_IDS = ["calendar", "weather", "lifeSkills", "skillTrees", "relationships", "achievements", "followers", "minimap", "platformer", "actionCombat", "lighting", "shopHours", "interiors", "flood", "trains", "flights"] as const;
 export type SystemId = (typeof SYSTEM_IDS)[number];
 
 export const SYSTEM_NAMES: Record<SystemId, { th: string; en: string }> = {
@@ -33,6 +34,12 @@ export const SYSTEM_NAMES: Record<SystemId, { th: string; en: string }> = {
   minimap: { th: "มินิแมป / แผนที่โลก", en: "Minimap / world map" },
   platformer: { th: "กระโดด ปีน (ด้านข้าง)", en: "Side-view platforming" },
   actionCombat: { th: "ต่อสู้แบบเรียลไทม์", en: "Real-time action combat" },
+  lighting: { th: "แสงตามเวลา (รุ่งเช้า → ดึก)", en: "Time-of-day lighting" },
+  shopHours: { th: "ร้านเปิด / ปิดตามเวลา", en: "Shop opening hours" },
+  interiors: { th: "เดินเข้าร้าน คนขายอยู่หลังเคาน์เตอร์", en: "Walk-in interiors, seller behind the counter" },
+  flood: { th: "น้ำท่วม", en: "Flooding" },
+  trains: { th: "ตารางรถไฟ ซื้อตั๋ว รอที่ชานชาลา", en: "Train timetables, tickets, platform" },
+  flights: { th: "สนามบิน ตารางเที่ยวบิน", en: "Airports and flights" },
 };
 
 /** Which tool provides a system and a marker in its installed runtime that proves the version has it. */
@@ -49,6 +56,28 @@ export const SYSTEM_PROBES: Record<SystemId, Array<{ tool: ToolId; file: string;
   followers: [{ tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function followerTiles\b/ }],
   minimap: [{ tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function minimapGrid\b/ }],
   platformer: [{ tool: "action", file: "runtime/pixi/easyaction-core.js", marker: /function stepBody\b/ }],
+  lighting: [
+    { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /LIGHT_PHASES/ },
+    { tool: "fx", file: "runtime/pixi/easyfx-pixi.js", marker: /easyfx-lighting/ },
+  ],
+  shopHours: [
+    { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function shopStatus\b/ },
+    { tool: "scene", file: "src/lib/export.ts", marker: /setShopOpen/ },
+  ],
+  interiors: [{ tool: "scene", file: "src/lib/sampleTownLife.ts", marker: /function stationHall\b/ }],
+  flood: [
+    { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function floodLevel\b/ },
+    { tool: "fx", file: "runtime/pixi/easyfx-pixi.js", marker: /function floodDepth\b/ },
+    { tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function setFlood\b/ },
+  ],
+  trains: [
+    { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function departures\b/ },
+    { tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /onStation/ },
+  ],
+  flights: [
+    { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function departures\b/ },
+    { tool: "tilemap", file: "runtime/pixi/easytilemap-overworld.js", marker: /function fly\b/ },
+  ],
   actionCombat: [
     { tool: "action", file: "runtime/pixi/easyaction-core.js", marker: /(?:class Skirmish\b|Skirmish = class\b)/ },
     { tool: "battle", file: "runtime/pixi/easybattle-core.js", marker: /function treeUnlock\b/ },
@@ -102,6 +131,12 @@ export function systemsData(s: Systems | undefined, fxExport: string[], action: 
     ...(s.followers?.length ? { followers: s.followers } : {}),
     ...(s.minimap ? { minimap: s.minimap } : {}),
     ...(s.platformer ? { platformer: { doc: action.doc, file: action.file, levels: typeof s.platformer === "object" ? s.platformer.levels : [] } } : {}),
+    ...(s.lighting ? { lighting: typeof s.lighting === "object" ? s.lighting : { overlay: true, lamps: true } } : {}),
+    ...(s.shopHours ? { shopHours: s.shopHours } : {}),
+    ...(s.interiors ? { interiors: s.interiors } : {}),
+    ...(s.flood ? { flood: s.flood } : {}),
+    ...(s.trains ? { trains: s.trains } : {}),
+    ...(s.flights ? { flights: s.flights } : {}),
     ...(s.actionCombat ? { actionCombat: { doc: action.doc, file: action.file, battleDb: action.battleDb, encounters: typeof s.actionCombat === "object" ? s.actionCombat.encounters : [], ...(typeof s.actionCombat === "object" && s.actionCombat.party ? { party: s.actionCombat.party } : {}) } } : {}),
   };
 }
@@ -163,6 +198,19 @@ export function checkSystems(m: GameManifest, c: Catalog): Issue[] {
       }
     }
   }
+  // town life
+  if (s.flood && !s.weather) warn("systems.flood", "systems.flood", "น้ำท่วมมาจากฝน / พายุของ Easy NPC (เปิด systems.weather ด้วย)", "floods rise with Easy NPC rain / storms (turn on systems.weather too)");
+  if ((s.shopHours || s.trains || s.flights || s.flood) && c.ready.has("npc")) {
+    for (const [i, k] of (s.shopHours?.shops ?? []).entries()) if (!c.systems.shops.has(k)) err("systems.shopHours", `systems.shopHours.shops[${i}]`, `ไม่พบร้าน "${k}" ใน Easy NPC shops`, `shop "${k}" not found in Easy NPC shops (have: ${list(c.systems.shops)})`);
+    for (const [key, want] of [["trains", "train"], ["flights", "flight"]] as const)
+      for (const [i, l] of ((s[key] as { lines?: string[] } | undefined)?.lines ?? []).entries()) {
+        const kind = c.systems.lines.get(l);
+        if (!kind) err(`systems.${key}`, `systems.${key}.lines[${i}]`, `ไม่พบสาย "${l}" ใน Easy NPC transit`, `line "${l}" not found in Easy NPC transit (have: ${list(c.systems.lines.keys())})`);
+        else if (kind !== want) err(`systems.${key}`, `systems.${key}.lines[${i}]`, `สาย "${l}" เป็น ${kind} ไม่ใช่ ${want}`, `line "${l}" is a ${kind}, not a ${want}`);
+      }
+    if (s.flood && !c.systems.floodConfig) warn("systems.flood", "systems.flood", "ยังไม่มี flood ใน Easy NPC (ใช้ค่าเริ่มต้น)", "no flood section in the Easy NPC docs (defaults are used)");
+  }
+  if (s.flights && s.flights.airports.length === 1) warn("systems.flights", "systems.flights.airports", "ต้องมีสนามบินอย่างน้อย 2 แห่งจึงบินได้", "flights need at least two airports");
   if (s.actionCombat && !m.battle) warn("systems.actionCombat", "battle", "การต่อสู้แบบเรียลไทม์ใช้ค่าพลังจาก Easy Battle (เพิ่มส่วน battle เพื่อใช้ฮีโร่ของเกม)", "real-time combat uses Easy Battle stats (add a battle section to fight with this game's heroes; the bundled sample is used otherwise)");
   return out;
 }

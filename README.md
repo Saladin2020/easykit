@@ -281,3 +281,11 @@ records it.
 Code: MIT. The template's kit strings and glue are written for this repo (CC0 1.0). Everything a generated game
 contains comes from the Easy tools under their own terms (samples CC0, Kanit SIL OFL 1.1); PixiJS v8 (MIT) is
 copied into web builds. See [CREDITS.md](CREDITS.md).
+
+### Town life systems (DSK-5)
+
+`systems.lighting` · `systems.shopHours { shops }` · `systems.interiors { scenes }` · `systems.flood` ·
+`systems.trains { lines, ticketCounter }` · `systems.flights { airports, lines }` — checked against the Easy NPC
+`shops` / `transit.lines` (a train line listed under flights is an error) and written to `kit/systems.json`.
+`easy doctor` probes Easy NPC (light phases, shop hours, departures, flood), Easy FX (lighting + flood overlays),
+Easy Scene (closed twins / interiors) and Easy Tilemap (station hook, flights, flood) — `systems 16/16`.
