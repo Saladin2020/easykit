@@ -1035,6 +1035,109 @@
           },
           "additionalProperties": false
         },
+        "lighting": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "overlay": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "lamps": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "shopHours": {
+          "type": "object",
+          "properties": {
+            "shops": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "interiors": {
+          "type": "object",
+          "properties": {
+            "scenes": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "flood": {
+          "type": "object",
+          "properties": {
+            "overlay": {
+              "default": true,
+              "type": "boolean"
+            },
+            "affectsGameplay": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "trains": {
+          "type": "object",
+          "properties": {
+            "lines": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "ticketCounter": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "flights": {
+          "type": "object",
+          "properties": {
+            "airports": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "lines": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
         "platformer": {
           "anyOf": [
             {

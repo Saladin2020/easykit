@@ -49,7 +49,7 @@ function catalog(over: Partial<Catalog> = {}): Catalog {
     cutscenes: new Set(["village_morning_delivery"]),
     saveSchemas: new Set(["village_delivery"]),
     fonts: new Set(["makham-8", "makham-12", "makham-16"]),
-    systems: { lifeSkills: new Set(["farming", "fishing", "cooking"]), crops: new Set(["morning_glory"]), fishing: new Set(["canal"]), heroTrees: new Set(["ton", "adam"]), achievements: new Map([["village_delivery", ["first_job"]]]), heartNpcs: new Set(["fatimah"]), actionDocs: new Map([["three_towns", { levels: new Set(["ban_na_di_rooftops"]), encounters: new Set(["monkey_raid", "field_pests"]) }]]) },
+    systems: { lifeSkills: new Set(["farming", "fishing", "cooking"]), crops: new Set(["morning_glory"]), fishing: new Set(["canal"]), heroTrees: new Set(["ton", "adam"]), achievements: new Map([["village_delivery", ["first_job"]]]), heartNpcs: new Set(["fatimah"]), actionDocs: new Map([["three_towns", { levels: new Set(["ban_na_di_rooftops"]), encounters: new Set(["monkey_raid", "field_pests"]) }]]), shops: new Set(["heng_shop", "halal_stall"]), lines: new Map([["sh_kb", "train"], ["fl_sh_kb", "flight"]]), floodConfig: true },
     ...over,
   };
 }
@@ -243,6 +243,25 @@ describe("systems section", () => {
     expect(systemsData(undefined, [])).toEqual({ format: "easy-systems/1", enabled: [] });
     const a = await withSystems({ platformer: { levels: ["ban_na_di_rooftops"] }, actionCombat: true });
     expect(systemsData(a.systems, [], { doc: "three_towns", file: "res://easyaction/easyaction.json", battleDb: "res://easyaction/battle_db.json" })).toMatchObject({ enabled: ["platformer", "actionCombat"], platformer: { levels: ["ban_na_di_rooftops"], file: "res://easyaction/easyaction.json" }, actionCombat: { encounters: [], battleDb: "res://easyaction/battle_db.json" } });
+  });
+  it("town life: checks shops and transit lines against Easy NPC, writes the runtime data", async () => {
+    const m = await withSystems({
+      calendar: {}, weather: {}, lighting: true, shopHours: { shops: ["heng_shop", "ghost_shop"] }, interiors: { scenes: ["shop_interior"] },
+      flood: {}, trains: { lines: ["sh_kb", "fl_sh_kb", "nope"] }, flights: { airports: ["talat_sin_heng"], lines: ["fl_sh_kb"] },
+    });
+    const issues = crossCheck(m, catalog());
+    const errs = issues.filter((i) => i.severity === "error").map((i) => i.path);
+    expect(errs).toEqual(expect.arrayContaining(["systems.shopHours.shops[1]", "systems.trains.lines[1]", "systems.trains.lines[2]"]));
+    expect(errs).not.toContain("systems.shopHours.shops[0]");
+    expect(errs).not.toContain("systems.trains.lines[0]");
+    expect(errs).not.toContain("systems.flights.lines[0]");
+    expect(issues.filter((i) => i.severity === "warning").map((i) => i.path)).toContain("systems.flights.airports");
+    const d = systemsData(m.systems, []);
+    expect(d.enabled).toEqual(expect.arrayContaining(["lighting", "shopHours", "interiors", "flood", "trains", "flights"]));
+    expect(d).toMatchObject({ lighting: { overlay: true, lamps: true }, flood: { overlay: true, affectsGameplay: true }, trains: { ticketCounter: true } });
+    const r = probeSystems(() => null);
+    expect(r.find((s) => s.id === "flood")?.tools).toEqual(["npc", "fx", "tilemap"]);
+    expect(r.find((s) => s.id === "interiors")?.tools).toEqual(["scene"]);
   });
   it("doctor probes report missing runtimes per system", () => {
     const r = probeSystems(() => null);
