@@ -13,6 +13,8 @@ export const TouchSchema = z
     opacity: z.number().min(0.2).max(1).default(0.6),
     size: z.number().min(0.6).max(2).default(1),
     style: z.enum(["stick", "dpad"]).default("stick"),
+    /** Landscape: "auto" shrinks the game for side gutters when it stays ≥ 65% size, "gutters" always, "overlay" never. */
+    fit: z.enum(["auto", "gutters", "overlay"]).default("auto"),
     /** Key sent by the top-right menu button. */
     menuKey: KEY.default("Escape"),
     /** Control sets by game mode (map = top-down, street = side-view, action, battle, menu, dialogue); merged over the defaults. */

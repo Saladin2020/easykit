@@ -789,7 +789,7 @@ export async function startGame(PIXI, mount) {
     try {
       const tc = await (await fetch(kit.touchFile)).json();
       const { mountTouchControls } = await import("./ui/easyui-touch.js");
-      globalThis.__easyTouch = mountTouchControls({ profiles: tc.profiles, profile: "menu", mode: tc.mode, opacity: tc.opacity, size: tc.size, style: tc.style, menu: { label: "≡", key: tc.menuKey }, game: { w: W, h: H } });
+      globalThis.__easyTouch = mountTouchControls({ profiles: tc.profiles, profile: "menu", mode: tc.mode, opacity: tc.opacity, size: tc.size, style: tc.style, fit: tc.fit, menu: { label: "≡", key: tc.menuKey }, game: { w: W, h: H } });
     } catch (err) {
       console.warn("touch controls unavailable", err);
     }

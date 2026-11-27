@@ -1261,6 +1261,15 @@
             "dpad"
           ]
         },
+        "fit": {
+          "default": "auto",
+          "type": "string",
+          "enum": [
+            "auto",
+            "gutters",
+            "overlay"
+          ]
+        },
         "menuKey": {
           "default": "Escape",
           "type": "string",

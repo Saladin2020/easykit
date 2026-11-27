@@ -12,7 +12,7 @@ const example = async () => JSON.parse(await readFile(path.join(root, "examples/
 describe("touch config", () => {
   it("defaults: auto mode, a control set for every game mode", () => {
     const d = touchData();
-    expect(d).toMatchObject({ mode: "auto", opacity: 0.6, size: 1, style: "stick", menuKey: "Escape" });
+    expect(d).toMatchObject({ mode: "auto", opacity: 0.6, size: 1, style: "stick", fit: "auto", menuKey: "Escape" });
     expect(Object.keys(d.profiles).sort()).toEqual(["action", "battle", "dialogue", "map", "menu", "street"]);
     expect(d.profiles.map!.stick).toBe("8way");
     expect(d.profiles.street!.stick).toBe("horizontal");
@@ -44,7 +44,7 @@ describe("touch config", () => {
   it("checkTouch: duplicate button ids and empty profiles", () => {
     const r = parseManifest({ ...{}, x: 1 });
     expect(r.manifest).toBeNull();
-    const issues = checkTouch({ mode: "auto", opacity: 0.6, size: 1, style: "stick", menuKey: "Escape", profiles: { a: { stick: "8way", buttons: [{ id: "ok", key: "e" }, { id: "ok", key: "z" }] }, b: { stick: "none", buttons: [] } } });
+    const issues = checkTouch({ mode: "auto", opacity: 0.6, size: 1, style: "stick", fit: "auto", menuKey: "Escape", profiles: { a: { stick: "8way", buttons: [{ id: "ok", key: "e" }, { id: "ok", key: "z" }] }, b: { stick: "none", buttons: [] } } });
     expect(issues.map((i) => i.path)).toEqual(["touch.profiles.a.buttons[1]", "touch.profiles.b"]);
     expect(checkTouch(undefined)).toEqual([]);
   });
