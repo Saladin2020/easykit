@@ -196,6 +196,10 @@ export function crossCheck(m: GameManifest, c: Catalog): Issue[] {
   if (ready("anim") && !c.cutscenes.has(m.anim.cutscene)) missing("anim.cutscene", "anim.cutscene", "anim", "คัตซีน", "Cutscene", m.anim.cutscene, c.cutscenes);
   if (ready("save") && !c.saveSchemas.has(m.save.schema)) missing("save.schema", "save.schema", "save", "สคีมาเซฟ", "Save schema", m.save.schema, c.saveSchemas);
   if (ready("font") && !c.fonts.has(m.game.font)) missing("font", "game.font", "font", "ฟอนต์", "Font", m.game.font, c.fonts);
+  for (const k of ["fontSmall", "fontDialogue"] as const) {
+    const v = m.game[k];
+    if (v && ready("font") && !c.fonts.has(v)) missing("font", `game.${k}`, "font", "ฟอนต์", "Font", v, c.fonts);
+  }
   if (m.ship?.targets.includes("android") && m.ship.androidPackage && !/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(m.ship.androidPackage)) err("ship.android", "ship.androidPackage", "ชื่อแพ็กเกจ Android ไม่ถูกต้อง (เช่น app.easysuite.village)", "invalid Android package id (e.g. app.easysuite.village)");
   return out;
 }

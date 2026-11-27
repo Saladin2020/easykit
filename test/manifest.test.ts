@@ -70,6 +70,18 @@ describe("game.easy.json schema", () => {
     expect(parse(raw).game.font).toBe("makham-16");
   });
 
+  it("picks the small-label and dialogue fonts (DSK-6) and checks they exist", async () => {
+    const raw = await example();
+    raw.game.font = "makham-16";
+    raw.game.fontSmall = "sarabun-px-12";
+    raw.game.fontDialogue = "sarabun-px-14";
+    const m = parse(raw);
+    expect(m.game.fontSmall).toBe("sarabun-px-12");
+    const c = catalog();
+    expect(errors(m, c).map((i) => i.path)).toEqual(expect.arrayContaining(["game.fontSmall", "game.fontDialogue"]));
+    expect(errors(m, catalog({ fonts: new Set(["makham-8", "makham-16", "sarabun-px-12", "sarabun-px-14"]) })).filter((i) => i.path.startsWith("game.font"))).toEqual([]);
+  });
+
   it("rejects unknown keys and bad enums with a path", async () => {
     const raw = await example();
     raw.game.engine = "unity";

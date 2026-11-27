@@ -72,6 +72,14 @@
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
+        "fontSmall": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "fontDialogue": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
         "seed": {
           "default": 1,
           "type": "integer",
