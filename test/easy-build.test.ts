@@ -53,6 +53,11 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 18 tools)", () => {
     for (const f of ["easyaction/easyaction_core.gd", "easyaction/action_player.gd", "easyaction/skirmish_view.gd"]) await readFile(path.join(dir, "TungSadao/godot", f), "utf8");
     const world = JSON.parse(await readFile(path.join(dir, "TungSadao/web/npc/easynpc.world.json"), "utf8"));
     expect(world.calendar.weatherSeed).toBe(11);
+    // DSK-7: phone touch controls (Easy UI) ship with the web build
+    expect(kit.touchFile).toBe("kit/touch.json");
+    const touch = JSON.parse(await readFile(path.join(dir, "TungSadao/web/kit/touch.json"), "utf8"));
+    expect(touch).toMatchObject({ mode: "auto", profiles: { map: { stick: "8way" }, street: { stick: "horizontal" } } });
+    for (const f of ["web/ui/easyui-touch.js", "web/ui/easyui-touch-core.js"]) await readFile(path.join(dir, "TungSadao", f), "utf8");
   });
 
   it("is idempotent: a second build skips everything", async () => {
