@@ -10,7 +10,7 @@ const ALL = SIBLINGS && ["portrait", "npc", "font", "battle"].every((t) => (OPTI
 const example = path.resolve(import.meta.dirname, "../examples/tung_sadao");
 const built = (r: BuildReport) => r.steps.filter((s) => s.status === "built").map((s) => (s.tool === "kit" ? s.title.split(" ")[1]! : s.tool));
 
-describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 17 tools)", () => {
+describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 18 tools)", () => {
   let dir: string;
   let cleanup: () => Promise<void>;
   let first: BuildReport;
@@ -23,7 +23,7 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 17 tools)", () => {
 
   it("builds every tool step in dependency order, then both engines", async () => {
     expect(first.ok, JSON.stringify(first.issues.concat(first.steps.filter((s) => s.error) as never[]))).toBe(true);
-    expect(first.steps.filter((s) => s.status === "built")).toHaveLength(18);
+    expect(first.steps.filter((s) => s.status === "built")).toHaveLength(19);
     const kit = JSON.parse(await readFile(path.join(dir, "TungSadao/web/kit/kit.json"), "utf8"));
     const s = JSON.stringify(kit);
     expect(s).toContain("ตลาดเช้าบ้านทุ่งสะเดา");
@@ -40,6 +40,19 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 17 tools)", () => {
     const strings = JSON.parse(await readFile(path.join(dir, "TungSadao/web/save/strings.json"), "utf8"));
     expect(JSON.stringify(strings)).toContain("Hantaran pagi di Ban Thung Sadao");
     expect(await readFile(path.join(dir, "TungSadao/BUILD-REPORT.md"), "utf8")).toMatch(/✅ built/);
+    // game systems: calendar seed reaches Easy NPC, both engines get kit/systems.json
+    expect(kit.systemsFile).toBe("kit/systems.json");
+    for (const e of ["web", "godot"]) {
+      const sys = JSON.parse(await readFile(path.join(dir, "TungSadao", e, "kit/systems.json"), "utf8"));
+      expect(sys).toMatchObject({ enabled: ["calendar", "weather", "followers", "minimap", "platformer", "actionCombat"], platformer: { levels: ["ban_na_di_rooftops"] }, actionCombat: { encounters: ["field_pests"] }, followers: ["adam"], weather: { fx: ["rain", "storm_rain", "fog_drift", "wind_gust"] } });
+    }
+    // Easy Action: exports in both engines, fighting with this game's Easy Battle data
+    const act = JSON.parse(await readFile(path.join(dir, "TungSadao/web/action/easyaction.json"), "utf8"));
+    expect(act.format).toBe("easyaction/1");
+    expect(JSON.parse(await readFile(path.join(dir, "TungSadao/web/action/battle_db.json"), "utf8")).heroes.map((h: { id: string }) => h.id)).toContain("ton");
+    for (const f of ["easyaction/easyaction_core.gd", "easyaction/action_player.gd", "easyaction/skirmish_view.gd"]) await readFile(path.join(dir, "TungSadao/godot", f), "utf8");
+    const world = JSON.parse(await readFile(path.join(dir, "TungSadao/web/npc/easynpc.world.json"), "utf8"));
+    expect(world.calendar.weatherSeed).toBe(11);
   });
 
   it("is idempotent: a second build skips everything", async () => {

@@ -125,6 +125,27 @@ export const GameManifestSchema = z
       gameStringsOnly: z.boolean().optional(),
       sources,
     }),
+    /** Game systems on top of the tools (Easy NPC calendar / weather / hearts, Easy FX weather, Easy Items life skills,
+     *  Easy Battle skill trees, Easy Quest achievements, Easy Tilemap followers + minimap). See src/lib/systems.ts. */
+    systems: z
+      .object({
+        calendar: z.object({ weatherSeed: z.number().int().min(0).optional(), daysPerSeason: z.number().int().min(1).max(120).optional(), startDay: z.number().int().min(0).default(0) }).strict().optional(),
+        weather: z.object({ overlay: z.boolean().default(true), affectsGameplay: z.boolean().default(true) }).strict().optional(),
+        lifeSkills: z.object({ skills: z.array(id()).default(["farming", "fishing", "cooking"]), plots: z.number().int().min(0).max(64).default(4), fishingSpots: z.array(id()).default([]), crops: z.array(id()).default([]) }).strict().optional(),
+        skillTrees: z.object({ heroes: z.array(id()).default([]) }).strict().optional(),
+        relationships: z.object({ npcs: z.array(id()).default([]), heartEvents: z.boolean().default(true) }).strict().optional(),
+        achievements: z.object({ quests: z.array(id()).default([]) }).strict().optional(),
+        followers: z.array(id()).max(3).optional(),
+        minimap: z.object({ cell: z.number().int().min(1).max(8).default(2), worldMap: z.boolean().default(true) }).strict().optional(),
+        /** Easy Action: side-view jump / climb levels on Easy Scene streets (ids in the action document). */
+        platformer: z.union([z.boolean(), z.object({ levels: z.array(id()).default([]) }).strict()]).optional(),
+        /** Easy Action: real-time skirmishes on Easy Battle stats (encounter ids in the action document). */
+        actionCombat: z.union([z.boolean(), z.object({ encounters: z.array(id()).default([]), party: z.array(z.object({ id: id(), level: z.number().int().min(1).max(99) })).optional() }).strict()]).optional(),
+      })
+      .strict()
+      .optional(),
+    /** Easy Action document (levels + encounters) used by systems.platformer / systems.actionCombat. */
+    action: z.object({ doc: id().default("three_towns"), sources }).optional(),
     ship: z
       .object({
         targets: z.array(z.enum(["web", "windows", "linux", "android"])).default(["web"]),
@@ -142,13 +163,13 @@ export type GameManifestInput = z.input<typeof GameManifestSchema>;
 /** Manifest section → the Easy tool it configures (for sources and error messages). */
 export const SECTION_TOOL: Record<string, ToolId> = {
   sprites: "sprite", portraits: "portrait", scenes: "scene", tilemaps: "tilemap", npcs: "npc", dialogue: "dialogue", quests: "quest",
-  items: "items", battle: "battle", ui: "ui", fx: "fx", sfx: "sfx", music: "music", anim: "anim", save: "save", ship: "ship",
+  items: "items", battle: "battle", ui: "ui", fx: "fx", sfx: "sfx", music: "music", anim: "anim", save: "save", action: "action", ship: "ship",
 };
 
 /** Folder inside a tool workspace where project `sources` go. */
 export const SOURCE_DIR: Partial<Record<ToolId, string>> = {
   sprite: "projects", portrait: "portraits", scene: "scenes", tilemap: "maps", npc: "npcs", dialogue: "dialogues", quest: "quests",
-  items: "items", battle: "battles", ui: "screens", fx: "effects", sfx: "banks", music: "songs", anim: "cutscenes", save: "schemas",
+  items: "items", battle: "battles", ui: "screens", fx: "effects", sfx: "banks", music: "songs", anim: "cutscenes", save: "schemas", action: "actions",
 };
 
 export function manifestJsonSchema(): Record<string, unknown> {
@@ -211,6 +232,8 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     music: { seeded: m.music.seeded, export: m.music.export, world: m.music.world, shop: m.music.shop },
     anim: { cutscene: m.anim.cutscene },
     items: { shop: m.items.shop },
+    ...(m.systems ? { systems: m.systems } : {}),
+    ...(m.action ? { action: { doc: m.action.doc } } : {}),
     battle: b ? { table: b.table, zone: b.zone, culture: b.culture, ground: b.ground, party: b.party, heroSheets: b.heroSheets, firstSeed: b.firstSeed, screen: { timing: b.timing, atbMode: b.atbMode, layout: b.layout, status: b.status } } : undefined,
     save: { schema: m.save.schema, ...(m.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
   };
@@ -238,6 +261,8 @@ export function templateToManifest(t: Template, o: { name: string; engine: "godo
     music: { seeded: t.music.seeded, export: t.music.export, world: t.music.world, shop: t.music.shop },
     anim: { cutscene: t.anim.cutscene },
     save: { schema: t.save.schema, ...(t.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
+    ...(t.systems ? { systems: t.systems } : {}),
+    ...(t.action ? { action: { doc: t.action.doc } } : {}),
     ...(o.ship ? { ship: o.ship } : {}),
   };
 }

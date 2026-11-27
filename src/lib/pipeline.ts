@@ -7,6 +7,7 @@ import { ToolMcp, runCli, type ToolEnv } from "./runner.js";
 import { BUILD_IDS, CORE_TOOL_IDS, TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
 import { doctor } from "./doctor.js";
 import { MANIFEST_FILE, templateToManifest } from "./manifest.js";
+import { calendarDoc } from "./systems.js";
 
 export const TEMPLATES = ["village_delivery"] as const;
 export type TemplateId = (typeof TEMPLATES)[number];
@@ -52,6 +53,10 @@ export interface Template {
   /** Easy Font ids for the HUD, small text and the dialogue box. */
   font?: { hud: string; small: string; dialogue: string };
   /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
+  /** Game systems (calendar, weather, life skills, skill trees, hearts, achievements, followers, minimap) — see systems.ts. */
+  systems?: import("./systems.js").Systems;
+  /** Easy Action document id (default three_towns) for systems.platformer / actionCombat. */
+  action?: { doc: string };
   battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number; screen?: BattleScreen };
 }
 
@@ -156,6 +161,7 @@ export const STEP_TITLES: Record<ToolId, string> = {
   npc: "villager schedules + day clock",
   font: "มะขาม pixel font for HUD + dialogue",
   battle: "paddy-field encounters + party",
+  action: "jump / climb levels + real-time skirmishes",
   ship: "release builds (easykit ship)",
   scene: "title backdrop from a side-view scene",
   tilemap: "village map with the generated cast",
@@ -302,6 +308,12 @@ export const STEPS: Record<ToolId, StepFn> = {
   async npc(c, notes) {
     if (!c.tpl.npc) return [];
     await initTool(c, "npc");
+    const cal = calendarDoc(c.tpl.systems);
+    const calFile = path.join(c.ws("npc"), "npcs", "zz_kit_calendar.easynpc.json");
+    if (cal) {
+      await writeJson(calFile, cal);
+      notes.push(`calendar + weather on (weatherSeed ${String((cal.calendar as { weatherSeed?: number }).weatherSeed ?? "default")})`);
+    } else await rm(calFile, { force: true });
     await cli(c, "npc", ["export", "--preset", "godot"]);
     await cli(c, "npc", ["export", "--preset", "pixi"]);
     notes.push(`${Object.keys(c.tpl.npc.map).length} villagers on their daily schedule (${Object.values(c.tpl.npc.map).join(", ")}); quest NPCs stay put`);
@@ -339,6 +351,26 @@ export const STEPS: Record<ToolId, StepFn> = {
     await cli(c, "battle", ["export", "--preset", "pixi"]);
     notes.push(`${b.table} in tiles ${b.zone.join(",")}; party ${b.party.map((p) => `${p.id} L${p.level}`).join(", ")}; heroes use the generated side-view sheets`);
     return [".easy/battle/exports/easybattle-godot", ".easy/battle/exports/easybattle-pixi"];
+  },
+
+  async action(c, notes) {
+    const s = c.tpl.systems;
+    if (!c.tpl.action && !s?.platformer && !s?.actionCombat) return [];
+    await initTool(c, "action");
+    const ws = c.ws("action");
+    const doc = c.tpl.action?.doc ?? "three_towns";
+    // fight with this game's Easy Battle heroes / enemies when the battle step ran
+    const battleWs = c.ws("battle");
+    const cfgFile = path.join(ws, "easyaction.config.json");
+    const cfg = (await readJson<Record<string, unknown>>(cfgFile).catch(() => ({}))) as Record<string, unknown>;
+    if (c.tpl.battle && (await exists(path.join(battleWs, "battles")))) await writeJson(cfgFile, { ...cfg, name: cfg.name ?? "Easy Action Workspace", battle: battleWs });
+    await cli(c, "action", ["check", doc]);
+    await cli(c, "action", ["export", doc, "--preset", "godot"]);
+    await cli(c, "action", ["export", doc, "--preset", "pixi"]);
+    const lv = typeof s?.platformer === "object" ? s.platformer.levels : [];
+    const en = typeof s?.actionCombat === "object" ? s.actionCombat.encounters : [];
+    notes.push(`${doc}: levels ${lv.join(", ") || "all"}; real-time encounters ${en.join(", ") || "all"}`);
+    return [`.easy/action/exports/${doc}-godot`, `.easy/action/exports/${doc}-pixi`];
   },
 
   async ship() {

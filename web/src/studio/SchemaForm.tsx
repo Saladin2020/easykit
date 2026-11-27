@@ -29,6 +29,7 @@ export function setIn(obj: unknown, path: Path, value: unknown): unknown {
 }
 
 export function defaultFor(s: JsonSchema): unknown {
+  if (s.anyOf?.length) return defaultFor(s.anyOf[0]!);
   if (s.default !== undefined) return structuredClone(s.default);
   if (s.const !== undefined) return s.const;
   if (s.enum) return s.enum[0];
@@ -99,7 +100,34 @@ function Scalar({ s, value, path, ctx, required }: { s: JsonSchema; value: unkno
 }
 
 /** One property: label + editor, with add/remove for optional values. */
-function Field({ name, s, value, path, ctx, required, label }: { name: string; s: JsonSchema; value: unknown; path: Path; ctx: Ctx; required: boolean; label?: string }) {
+const typeOf = (v: unknown) => (Array.isArray(v) ? "array" : v === null ? "null" : typeof v === "number" ? "number" : typeof v);
+/** anyOf (e.g. `true` or `{ levels: [...] }`): the branch the value matches, else the first. */
+export function pickBranch(s: JsonSchema, v: unknown): JsonSchema {
+  if (!s.anyOf?.length) return s;
+  return s.anyOf.find((b) => b.type === typeOf(v) || (b.type === "integer" && typeof v === "number")) ?? s.anyOf[0]!;
+}
+
+function Field(props: { name: string; s: JsonSchema; value: unknown; path: Path; ctx: Ctx; required: boolean; label?: string }) {
+  const { s, value, path, ctx } = props;
+  if (!s.anyOf?.length) return <PlainField {...props} />;
+  const branch = pickBranch(s, value);
+  return (
+    <div className="any-of">
+      <PlainField {...props} s={branch} />
+      {value !== undefined ? (
+        <select aria-label={`${props.name} form`} className="mini" value={s.anyOf.indexOf(branch)} onChange={(e) => ctx.onChange(path, defaultFor(s.anyOf![Number(e.target.value)]!))}>
+          {s.anyOf.map((b, i) => (
+            <option key={i} value={i}>
+              {b.type === "object" ? "{ … }" : b.type}
+            </option>
+          ))}
+        </select>
+      ) : null}
+    </div>
+  );
+}
+
+function PlainField({ name, s, value, path, ctx, required, label }: { name: string; s: JsonSchema; value: unknown; path: Path; ctx: Ctx; required: boolean; label?: string }) {
   const { t } = useLang();
   const key = path.join(".");
   const cls = `field${isSimple(s) ? " simple" : " complex"}${ctx.bad.has(key) ? " has-issue" : ""}`;

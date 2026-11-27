@@ -49,6 +49,8 @@ export interface Catalog {
   cutscenes: Set<string>;
   saveSchemas: Set<string>;
   fonts: Set<string>;
+  /** Game systems data found in the workspaces (life skills, crops, fishing spots, hero trees, achievements, hearts). */
+  systems: { lifeSkills: Set<string>; crops: Set<string>; fishing: Set<string>; heroTrees: Set<string>; achievements: Map<string, string[]>; heartNpcs: Set<string>; actionDocs: Map<string, { levels: Set<string>; encounters: Set<string> }> };
 }
 
 const files = async (dir: string, ext: string) => (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(ext)).sort();
@@ -97,7 +99,7 @@ export async function readCatalog(ws: (t: ToolId) => string, env: (t: ToolId) =>
   const mark = async (t: ToolId) => {
     if (await exists(ws(t))) ready.add(t);
   };
-  for (const t of ["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "items", "battle", "ui", "fx", "sfx", "music", "anim", "save", "font"] as ToolId[]) await mark(t);
+  for (const t of ["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "items", "battle", "ui", "fx", "sfx", "music", "anim", "save", "font", "action"] as ToolId[]) await mark(t);
 
   const c: Catalog = {
     ready,
@@ -120,6 +122,7 @@ export async function readCatalog(ws: (t: ToolId) => string, env: (t: ToolId) =>
     cutscenes: new Set((await files(path.join(ws("anim"), "cutscenes"), ".easyanim.json")).map((f) => stem(f, ".easyanim.json"))),
     saveSchemas: new Set((await files(path.join(ws("save"), "schemas"), ".easysave.json")).map((f) => stem(f, ".easysave.json"))),
     fonts: new Set((await files(path.join(ws("font"), "fonts"), ".easyfont")).map((f) => stem(f, ".easyfont"))),
+    systems: { lifeSkills: new Set(), crops: new Set(), fishing: new Set(), heroTrees: new Set(), achievements: new Map(), heartNpcs: new Set(), actionDocs: new Map() },
   };
   // Easy Portrait sets (built into dialogue portraits by the build) count as portraits too.
   for (const f of await files(path.join(ws("portrait"), "portraits"), ".easyportrait.json")) {
@@ -134,17 +137,32 @@ export async function readCatalog(ws: (t: ToolId) => string, env: (t: ToolId) =>
   for (const f of await files(path.join(ws("npc"), "npcs"), ".easynpc.json")) {
     const d = await readJson<{ npcs?: Array<{ id: string; sprite?: string }> }>(path.join(ws("npc"), "npcs", f)).catch(() => ({}) as { npcs?: Array<{ id: string; sprite?: string }> });
     for (const n of d.npcs ?? []) c.npcs.set(n.id, { sprite: n.sprite ?? null });
+    for (const n of (d as { npcs?: Array<{ id: string; affinity?: { heartEvents?: unknown[] } }> }).npcs ?? []) if (n.affinity?.heartEvents?.length) c.systems.heartNpcs.add(n.id);
   }
-  for (const f of await files(path.join(ws("quest"), "quests"), ".ezq")) c.quests.set(stem(f, ".ezq"), parseEzq(await readFile(path.join(ws("quest"), "quests", f), "utf8")));
+  for (const f of await files(path.join(ws("action"), "actions"), ".easyaction.json")) {
+    const d = await readJson<{ levels?: Array<{ id: string }>; encounters?: Array<{ id: string }> }>(path.join(ws("action"), "actions", f)).catch(() => ({}) as { levels?: Array<{ id: string }>; encounters?: Array<{ id: string }> });
+    c.systems.actionDocs.set(stem(f, ".easyaction.json"), { levels: new Set((d.levels ?? []).map((x) => x.id)), encounters: new Set((d.encounters ?? []).map((x) => x.id)) });
+  }
+  for (const f of await files(path.join(ws("quest"), "quests"), ".ezq")) {
+    const text = await readFile(path.join(ws("quest"), "quests", f), "utf8");
+    c.quests.set(stem(f, ".ezq"), parseEzq(text));
+    const ach = [...text.matchAll(/^@achievement\s+([a-z0-9_-]+)/gm)].map((m) => m[1]!);
+    if (ach.length) c.systems.achievements.set(stem(f, ".ezq"), ach);
+  }
   for (const f of await files(path.join(ws("items"), "items"), ".easyitems.json")) {
     const d = await readJson<{ items?: Array<{ id: string; category?: string; tags?: string[]; halal?: boolean }>; shops?: Array<{ id: string; halal?: boolean; stock?: Array<{ item: string }> }> }>(path.join(ws("items"), "items", f)).catch(() => ({}) as Record<string, never>);
     for (const i of d.items ?? []) c.items.set(i.id, { id: i.id, category: i.category, tags: i.tags ?? [], halal: i.halal });
     for (const s of d.shops ?? []) c.shops.set(s.id, { id: s.id, halal: !!s.halal, stock: (s.stock ?? []).map((x) => x.item) });
+    const life = d as { skills?: Array<{ id: string }>; crops?: Array<{ id: string }>; fishing?: Array<{ id: string }> };
+    for (const x of life.skills ?? []) c.systems.lifeSkills.add(x.id);
+    for (const x of life.crops ?? []) c.systems.crops.add(x.id);
+    for (const x of life.fishing ?? []) c.systems.fishing.add(x.id);
   }
   for (const f of await files(path.join(ws("battle"), "battles"), ".easybattle.json")) {
     const d = await readJson<{ enemies?: Array<{ id: string }>; heroes?: Array<{ id: string }>; encounters?: Array<{ id: string }> }>(path.join(ws("battle"), "battles", f)).catch(() => ({}) as Record<string, never>);
     for (const e of d.enemies ?? []) c.battle.enemies.add(e.id);
     for (const e of d.heroes ?? []) c.battle.heroes.add(e.id);
+    for (const e of (d as { heroes?: Array<{ id: string; tree?: unknown[] }> }).heroes ?? []) if (e.tree?.length) c.systems.heroTrees.add(e.id);
     for (const e of d.encounters ?? []) c.battle.encounters.add(e.id);
   }
   for (const f of await files(path.join(ws("sfx"), "banks"), ".easysfx.json")) {
