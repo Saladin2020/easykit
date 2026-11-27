@@ -45,7 +45,7 @@ const STEP_INPUTS: Record<ToolId, Array<keyof Template>> = {
   scene: ["scene"],
   tilemap: ["tilemap", "sprite"],
   dialogue: ["dialogue", "portrait"],
-  npc: ["npc"],
+  npc: ["npc", "systems"],
   quest: ["quest", "dialogue"],
   font: ["font"],
   ui: ["ui", "viewport"],

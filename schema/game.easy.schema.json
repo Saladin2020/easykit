@@ -886,6 +886,164 @@
         "schema"
       ]
     },
+    "systems": {
+      "type": "object",
+      "properties": {
+        "calendar": {
+          "type": "object",
+          "properties": {
+            "weatherSeed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "daysPerSeason": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120
+            },
+            "startDay": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "weather": {
+          "type": "object",
+          "properties": {
+            "overlay": {
+              "default": true,
+              "type": "boolean"
+            },
+            "affectsGameplay": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "lifeSkills": {
+          "type": "object",
+          "properties": {
+            "skills": {
+              "default": [
+                "farming",
+                "fishing",
+                "cooking"
+              ],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "plots": {
+              "default": 4,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "fishingSpots": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "crops": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "skillTrees": {
+          "type": "object",
+          "properties": {
+            "heroes": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "npcs": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            },
+            "heartEvents": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "achievements": {
+          "type": "object",
+          "properties": {
+            "quests": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]*$"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "followers": {
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          }
+        },
+        "minimap": {
+          "type": "object",
+          "properties": {
+            "cell": {
+              "default": 2,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            },
+            "worldMap": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "platformer": {
+          "type": "boolean"
+        },
+        "actionCombat": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "ship": {
       "type": "object",
       "properties": {

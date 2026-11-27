@@ -323,7 +323,11 @@
       "footstep_dust",
       "heal_plus",
       "fireflies",
-      "lantern_glow"
+      "lantern_glow",
+      "rain",
+      "storm_rain",
+      "fog_drift",
+      "wind_gust"
     ]
   },
   "sfx": {
@@ -358,6 +362,22 @@
     "sources": [
       "content/save/*.easyi18n.json"
     ]
+  },
+  "systems": {
+    "calendar": {
+      "weatherSeed": 11
+    },
+    "weather": {
+      "overlay": true,
+      "affectsGameplay": true
+    },
+    "followers": [
+      "adam"
+    ],
+    "minimap": {
+      "cell": 2,
+      "worldMap": true
+    }
   },
   "ship": {
     "targets": [

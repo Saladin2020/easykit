@@ -130,6 +130,23 @@ The Godot test (`kit/test_game.gd`, 73 checks with all tools) and the web check 
 headless Chrome) play the whole quest, the shop, save/load, the language switch, the portraits, the schedules, the
 pixel font and a battle.
 
+## Game systems
+
+`systems` in `game.easy.json` (optional) turns on gameplay systems that live in the Easy tools:
+
+| key | tool | what |
+| --- | --- | --- |
+| `calendar` | Easy NPC | days / seasons / years, date events (market day, kite festival); `weatherSeed`, `daysPerSeason` go into the NPC workspace |
+| `weather` | Easy NPC + Easy FX | deterministic daily weather; overlay effects `rain`, `storm_rain`, `fog_drift`, `wind_gust` (add them to `fx.export`) |
+| `lifeSkills` | Easy Items | farming / fishing / cooking XP; skills, crops and fishing spots are checked against the items workspace |
+| `skillTrees` | Easy Battle | hero skill trees (heroes need a `tree`) |
+| `relationships` | Easy NPC | hearts and heart events (halal gift refusal is built in) |
+| `achievements` | Easy Quest | `@achievement` lines in the listed quest files |
+| `followers` | Easy Tilemap | up to 3 cast members walk behind the player |
+| `minimap` | Easy Tilemap | corner minimap + world map |
+
+`easy validate` cross-checks them, `easy build` writes `kit/systems.json` for both engines (and `kit.json` → `systemsFile`), the Studio shows a **Game systems** section, and `easy doctor` lists which systems the installed tool versions provide. `platformer` / `actionCombat` are accepted but not built yet (validate warns).
+
 ## Project layout
 
 ```

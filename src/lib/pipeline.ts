@@ -7,6 +7,7 @@ import { ToolMcp, runCli, type ToolEnv } from "./runner.js";
 import { BUILD_IDS, CORE_TOOL_IDS, TOOLS, TOOL_IDS, kitRoot, loadKitConfig, resolveAll, type KitConfig, type ResolvedTool, type ToolId } from "./tools.js";
 import { doctor } from "./doctor.js";
 import { MANIFEST_FILE, templateToManifest } from "./manifest.js";
+import { calendarDoc } from "./systems.js";
 
 export const TEMPLATES = ["village_delivery"] as const;
 export type TemplateId = (typeof TEMPLATES)[number];
@@ -52,6 +53,8 @@ export interface Template {
   /** Easy Font ids for the HUD, small text and the dialogue box. */
   font?: { hud: string; small: string; dialogue: string };
   /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
+  /** Game systems (calendar, weather, life skills, skill trees, hearts, achievements, followers, minimap) — see systems.ts. */
+  systems?: import("./systems.js").Systems;
   battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number; screen?: BattleScreen };
 }
 
@@ -302,6 +305,12 @@ export const STEPS: Record<ToolId, StepFn> = {
   async npc(c, notes) {
     if (!c.tpl.npc) return [];
     await initTool(c, "npc");
+    const cal = calendarDoc(c.tpl.systems);
+    const calFile = path.join(c.ws("npc"), "npcs", "zz_kit_calendar.easynpc.json");
+    if (cal) {
+      await writeJson(calFile, cal);
+      notes.push(`calendar + weather on (weatherSeed ${String((cal.calendar as { weatherSeed?: number }).weatherSeed ?? "default")})`);
+    } else await rm(calFile, { force: true });
     await cli(c, "npc", ["export", "--preset", "godot"]);
     await cli(c, "npc", ["export", "--preset", "pixi"]);
     notes.push(`${Object.keys(c.tpl.npc.map).length} villagers on their daily schedule (${Object.values(c.tpl.npc.map).join(", ")}); quest NPCs stay put`);

@@ -1,5 +1,6 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { systemsData } from "./systems.js";
 import path from "node:path";
 import { copyTree, exists, mergeTree, readJson, walk, writeJson, type CopyReport } from "./fsutil.js";
 import { LOCALES, localizeDialogue, mergeTables, segmentDialogue, typesetDialogue, type StringTable } from "./localize.js";
@@ -307,7 +308,9 @@ export async function assembleGodot(c: Ctx): Promise<GodotBuild> {
     shopScene: "res://easyitems/shop_ui.tscn",
     dialogueBox: "res://addons/easydialogue/dialogue_box.tscn",
     theme: `res://easyui/themes/${c.tpl.ui.theme}.tres`,
+    systemsFile: "res://kit/systems.json",
   });
+  await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export));
   await writeFile(path.join(dest, "icon.svg"), ICON_SVG);
   await writeFile(path.join(dest, "project.godot"), projectGodot({ name: c.name, autoloads, width: c.tpl.viewport.width, height: c.tpl.viewport.height, translations }));
   const files = (await walk(dest)).filter((f) => !f.startsWith(".godot/")).length;

@@ -7,6 +7,7 @@ import { manifestJsonSchema, manifestToTemplate, parseManifest, templateToManife
 import { loadTemplate } from "../src/lib/pipeline.js";
 import { BUILD_IDS, type ToolId } from "../src/lib/tools.js";
 import { crossCheck } from "../src/lib/validate.js";
+import { calendarDoc, enabledSystems, probeSystems, systemsData } from "../src/lib/systems.js";
 
 const root = path.resolve(import.meta.dirname, "..");
 const example = async () => JSON.parse(await readFile(path.join(root, "examples/tung_sadao/game.easy.json"), "utf8"));
@@ -41,13 +42,14 @@ function catalog(over: Partial<Catalog> = {}): Catalog {
     ]),
     battle: { enemies: new Set(["paddy_crab", "giant_mosquito", "monkey_thief", "fighting_rooster"]), heroes: new Set(["ton", "adam"]), encounters: new Set(["plains_fields", "tung_sadao_fields"]) },
     uiScreens: new Set(["village"]),
-    fx: new Set(["coin_burst", "level_up", "sparkle_shine", "confetti", "footstep_dust", "heal_plus", "fireflies", "lantern_glow"]),
+    fx: new Set(["coin_burst", "level_up", "sparkle_shine", "confetti", "footstep_dust", "heal_plus", "fireflies", "lantern_glow", "rain", "storm_rain", "fog_drift", "wind_gust"]),
     sfxBanks: new Map([["village", new Set(["coin"])]]),
     sfxPresets: new Set(["coin"]),
     music: new Set(["village_day", "shop_theme"]),
     cutscenes: new Set(["village_morning_delivery"]),
     saveSchemas: new Set(["village_delivery"]),
     fonts: new Set(["makham-8", "makham-12", "makham-16"]),
+    systems: { lifeSkills: new Set(["farming", "fishing", "cooking"]), crops: new Set(["morning_glory"]), fishing: new Set(["canal"]), heroTrees: new Set(["ton", "adam"]), achievements: new Map([["village_delivery", ["first_job"]]]), heartNpcs: new Set(["fatimah"]) },
     ...over,
   };
 }
@@ -199,5 +201,48 @@ describe("build order", () => {
   });
   it("detects a cycle", () => {
     expect(() => buildOrder(["sprite", "portrait"], { ...STEP_DEPS, sprite: ["portrait"] })).toThrow(/cycle/);
+  });
+});
+
+describe("systems section", () => {
+  const withSystems = async (systems: unknown) => parse({ ...(await example()), systems });
+  it("is optional and round-trips through the template", async () => {
+    const m = await withSystems({ calendar: { weatherSeed: 7 }, weather: {}, followers: ["kopiah_boy"], minimap: {} });
+    expect(m.systems?.weather).toEqual({ overlay: true, affectsGameplay: true });
+    expect(enabledSystems(m.systems)).toEqual(["calendar", "weather", "followers", "minimap"]);
+    const tpl = manifestToTemplate(m, await loadTemplate("village_delivery"));
+    expect(tpl.systems?.calendar?.weatherSeed).toBe(7);
+    expect(templateToManifest(tpl, { name: "x", engine: "pixi", seed: 1 }).systems).toEqual(m.systems);
+    expect(calendarDoc(m.systems)).toEqual({ format: "easynpc/1", id: "kit_calendar", npcs: [], calendar: { weatherSeed: 7 } });
+    expect(calendarDoc(undefined)).toBeNull();
+  });
+  it("rejects unknown keys", async () => {
+    expect(parseManifest({ ...(await example()), systems: { seasons: true } }).manifest).toBeNull();
+  });
+  it("cross-checks life skills, trees, hearts, achievements and followers", async () => {
+    const m = await withSystems({
+      lifeSkills: { skills: ["farming", "mining"], crops: ["durian"], fishingSpots: ["canal"] },
+      skillTrees: { heroes: ["ton", "ghost"] },
+      relationships: { npcs: ["fatimah", "adam", "nobody"] },
+      achievements: { quests: ["village_delivery", "other"] },
+      followers: ["nobody_sprite"],
+      platformer: true,
+    });
+    const issues = crossCheck(m, catalog());
+    const errs = issues.filter((i) => i.severity === "error").map((i) => i.path);
+    expect(errs).toEqual(expect.arrayContaining(["systems.lifeSkills.skills[1]", "systems.lifeSkills.crops[0]", "systems.skillTrees.heroes[1]", "systems.relationships.npcs[2]", "systems.achievements.quests[1]", "systems.followers[0]"]));
+    expect(errs).not.toContain("systems.lifeSkills.skills[0]");
+    const warns = issues.filter((i) => i.severity === "warning").map((i) => i.path);
+    expect(warns).toEqual(expect.arrayContaining(["systems.relationships.npcs[1]", "systems.platformer"]));
+  });
+  it("writes the runtime systems data with the exported weather effects", async () => {
+    const m = await withSystems({ calendar: {}, weather: {} });
+    expect(systemsData(m.systems, ["rain", "storm_rain", "coin_burst"])).toMatchObject({ format: "easy-systems/1", enabled: ["calendar", "weather"], weather: { fx: ["rain", "storm_rain"] } });
+    expect(systemsData(undefined, [])).toEqual({ format: "easy-systems/1", enabled: [] });
+  });
+  it("doctor probes report missing runtimes per system", () => {
+    const r = probeSystems(() => null);
+    expect(r.find((s) => s.id === "calendar")).toMatchObject({ ok: false, tools: ["npc"] });
+    expect(r.find((s) => s.id === "platformer")?.missing).toEqual(["not implemented in the Easy tools yet"]);
   });
 });

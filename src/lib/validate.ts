@@ -1,5 +1,6 @@
 /** Cross-reference checks for game.easy.json: every id a section names must exist in the tool that owns it. */
 import type { Catalog } from "./catalog.js";
+import { checkSystems } from "./systems.js";
 import type { GameManifest, Issue } from "./manifest.js";
 import type { ToolId } from "./tools.js";
 import { TOOLS } from "./tools.js";
@@ -24,7 +25,7 @@ export interface ValidateResult {
 }
 
 export function crossCheck(m: GameManifest, c: Catalog): Issue[] {
-  const out: Issue[] = [];
+  const out: Issue[] = [...checkSystems(m, c)];
   const err = (code: string, p: string, th: string, en: string) => out.push({ severity: "error", code, path: p, th, en });
   const warn = (code: string, p: string, th: string, en: string) => out.push({ severity: "warning", code, path: p, th, en });
   const have = (s: Iterable<string>) => {

@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { probeSystems, type SystemReport } from "./systems.js";
 import { TOOLS, TOOL_IDS, cliPath, loadKitConfig, mcpServerPath, resolveAll, type KitConfig, type ToolId } from "./tools.js";
 
 export interface ToolReport {
@@ -33,6 +34,8 @@ export interface DoctorReport {
   config: string | null;
   tools: ToolReport[];
   engines: EngineReport;
+  /** Game systems the installed tool runtimes provide (informational; never blocks `ok`). */
+  systems: SystemReport[];
   summary: string;
 }
 
@@ -140,7 +143,8 @@ export function doctor(opts: { cfg?: KitConfig; configPath?: string | null; env?
   const ready = tools.filter((t) => t.installed && t.built && t.deps).length;
   // The first twelve are required; the optional five only count against `ok` when installed but not built.
   const blocking = tools.filter((t) => !(t.installed && t.built && t.deps) && (t.installed || !TOOLS[t.id].optional));
-  return { ok: blocking.length === 0, config: loaded.path, tools, engines, summary: `${ready}/${tools.length} Easy tools ready` };
+  const systems = probeSystems((t) => resolved[t]?.home ?? null);
+  return { ok: blocking.length === 0, config: loaded.path, tools, engines, systems, summary: `${ready}/${tools.length} Easy tools ready` };
 }
 
 export function formatDoctor(r: DoctorReport): string {
@@ -159,5 +163,8 @@ export function formatDoctor(r: DoctorReport): string {
     `chrome  ${r.engines.chrome.path ?? "not found — web screenshot skipped"}`,
     `aseprite ${r.engines.aseprite.path ?? "not found (optional; set ASEPRITE_BIN)"}`,
     `xvfb    ${r.engines.xvfb ? "yes" : "no"}`,
+    "",
+    `systems ${r.systems.filter((s) => s.ok).length}/${r.systems.length}  ${r.systems.map((s) => `${s.ok ? "ok" : "--"} ${s.id}`).join(" · ")}`,
+    ...r.systems.filter((s) => !s.ok && s.tools.length).map((s) => `        ${s.id}: ${s.missing.join("; ")} (update the tool)`),
   ].join("\n");
 }

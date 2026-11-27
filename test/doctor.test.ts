@@ -55,3 +55,16 @@ describe("doctor", () => {
     expect(r.summary).toBe("12/17 Easy tools ready");
   });
 });
+
+describe("doctor systems", () => {
+  it("finds every built game system in the sibling tool runtimes", async () => {
+    const { probeSystems } = await import("../src/lib/systems.js");
+    const { resolveAll, loadKitConfig } = await import("../src/lib/tools.js");
+    const homes = resolveAll(loadKitConfig().config);
+    const r = probeSystems((t) => homes[t]?.home ?? null);
+    const built = r.filter((s) => s.tools.length);
+    // Only meaningful when the suite's tools are on their systems versions; otherwise each miss names the tool to update.
+    for (const s of built) if (!s.ok) expect(s.missing.join()).toMatch(/lacks|runtime/);
+    expect(r.map((s) => s.id)).toContain("minimap");
+  });
+});

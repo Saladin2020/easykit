@@ -125,6 +125,24 @@ export const GameManifestSchema = z
       gameStringsOnly: z.boolean().optional(),
       sources,
     }),
+    /** Game systems on top of the tools (Easy NPC calendar / weather / hearts, Easy FX weather, Easy Items life skills,
+     *  Easy Battle skill trees, Easy Quest achievements, Easy Tilemap followers + minimap). See src/lib/systems.ts. */
+    systems: z
+      .object({
+        calendar: z.object({ weatherSeed: z.number().int().min(0).optional(), daysPerSeason: z.number().int().min(1).max(120).optional(), startDay: z.number().int().min(0).default(0) }).strict().optional(),
+        weather: z.object({ overlay: z.boolean().default(true), affectsGameplay: z.boolean().default(true) }).strict().optional(),
+        lifeSkills: z.object({ skills: z.array(id()).default(["farming", "fishing", "cooking"]), plots: z.number().int().min(0).max(64).default(4), fishingSpots: z.array(id()).default([]), crops: z.array(id()).default([]) }).strict().optional(),
+        skillTrees: z.object({ heroes: z.array(id()).default([]) }).strict().optional(),
+        relationships: z.object({ npcs: z.array(id()).default([]), heartEvents: z.boolean().default(true) }).strict().optional(),
+        achievements: z.object({ quests: z.array(id()).default([]) }).strict().optional(),
+        followers: z.array(id()).max(3).optional(),
+        minimap: z.object({ cell: z.number().int().min(1).max(8).default(2), worldMap: z.boolean().default(true) }).strict().optional(),
+        /** Not built by the kit yet (reported by easy validate). */
+        platformer: z.boolean().optional(),
+        actionCombat: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
     ship: z
       .object({
         targets: z.array(z.enum(["web", "windows", "linux", "android"])).default(["web"]),
@@ -211,6 +229,7 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     music: { seeded: m.music.seeded, export: m.music.export, world: m.music.world, shop: m.music.shop },
     anim: { cutscene: m.anim.cutscene },
     items: { shop: m.items.shop },
+    ...(m.systems ? { systems: m.systems } : {}),
     battle: b ? { table: b.table, zone: b.zone, culture: b.culture, ground: b.ground, party: b.party, heroSheets: b.heroSheets, firstSeed: b.firstSeed, screen: { timing: b.timing, atbMode: b.atbMode, layout: b.layout, status: b.status } } : undefined,
     save: { schema: m.save.schema, ...(m.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
   };
@@ -238,6 +257,7 @@ export function templateToManifest(t: Template, o: { name: string; engine: "godo
     music: { seeded: t.music.seeded, export: t.music.export, world: t.music.world, shop: t.music.shop },
     anim: { cutscene: t.anim.cutscene },
     save: { schema: t.save.schema, ...(t.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
+    ...(t.systems ? { systems: t.systems } : {}),
     ...(o.ship ? { ship: o.ship } : {}),
   };
 }

@@ -40,6 +40,14 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 17 tools)", () => {
     const strings = JSON.parse(await readFile(path.join(dir, "TungSadao/web/save/strings.json"), "utf8"));
     expect(JSON.stringify(strings)).toContain("Hantaran pagi di Ban Thung Sadao");
     expect(await readFile(path.join(dir, "TungSadao/BUILD-REPORT.md"), "utf8")).toMatch(/✅ built/);
+    // game systems: calendar seed reaches Easy NPC, both engines get kit/systems.json
+    expect(kit.systemsFile).toBe("kit/systems.json");
+    for (const e of ["web", "godot"]) {
+      const sys = JSON.parse(await readFile(path.join(dir, "TungSadao", e, "kit/systems.json"), "utf8"));
+      expect(sys).toMatchObject({ enabled: ["calendar", "weather", "followers", "minimap"], followers: ["adam"], weather: { fx: ["rain", "storm_rain", "fog_drift", "wind_gust"] } });
+    }
+    const world = JSON.parse(await readFile(path.join(dir, "TungSadao/web/npc/easynpc.world.json"), "utf8"));
+    expect(world.calendar.weatherSeed).toBe(11);
   });
 
   it("is idempotent: a second build skips everything", async () => {
