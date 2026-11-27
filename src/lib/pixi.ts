@@ -1,6 +1,7 @@
 import { copyFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { systemsData } from "./systems.js";
+import { touchData } from "./touch.js";
 import path from "node:path";
 import { copyTree, exists, walk, writeJson } from "./fsutil.js";
 import { featureData, features, fontMetrics, kitData, loadGameStrings, loadShaper, pixelFontLayout, writeLocalizedDialogues, type DialogueBuild } from "./godot.js";
@@ -83,7 +84,9 @@ export async function assemblePixi(c: Ctx): Promise<PixiBuild> {
     dialogueFiles: Object.fromEntries(LOCALES.map((l) => [l, `dialogue/${c.tpl.dialogue.id}.${l}.dialogue.json`])),
     cutsceneFile: `anim/cutscenes/${c.tpl.anim.cutscene}.json`,
     systemsFile: "kit/systems.json",
+    touchFile: "kit/touch.json",
   });
+  await writeJson(path.join(dest, "kit", "touch.json"), touchData(c.tpl.touch));
   await writeJson(path.join(dest, "kit", "systems.json"), systemsData(c.tpl.systems, c.tpl.fx.export, { doc: c.tpl.action?.doc ?? "three_towns", file: "action/easyaction.json", battleDb: "action/battle_db.json" }));
   return { dir: "web", files: (await walk(dest)).length, pixi, dialogue };
 }

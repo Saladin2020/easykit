@@ -1229,6 +1229,108 @@
         }
       }
     },
+    "touch": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "default": "auto",
+          "type": "string",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ]
+        },
+        "opacity": {
+          "default": 0.6,
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
+        },
+        "size": {
+          "default": 1,
+          "type": "number",
+          "minimum": 0.6,
+          "maximum": 2
+        },
+        "style": {
+          "default": "stick",
+          "type": "string",
+          "enum": [
+            "stick",
+            "dpad"
+          ]
+        },
+        "fit": {
+          "default": "auto",
+          "type": "string",
+          "enum": [
+            "auto",
+            "gutters",
+            "overlay"
+          ]
+        },
+        "menuKey": {
+          "default": "Escape",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "profiles": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "stick": {
+                "default": "8way",
+                "type": "string",
+                "enum": [
+                  "8way",
+                  "4way",
+                  "horizontal",
+                  "vertical",
+                  "none"
+                ]
+              },
+              "buttons": {
+                "default": [],
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 4
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 16
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "key"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "ship": {
       "type": "object",
       "properties": {

@@ -55,6 +55,7 @@ export interface Template {
   /** Easy Battle: encounter table, the field zone in tiles [x0, y0, x1, y1], party and hero sheets from Easy Sprite. */
   /** Game systems (calendar, weather, life skills, skill trees, hearts, achievements, followers, minimap) — see systems.ts. */
   systems?: import("./systems.js").Systems;
+  touch?: import("./touch.js").TouchConfig;
   /** Easy Action document id (default three_towns) for systems.platformer / actionCombat. */
   action?: { doc: string };
   battle?: { table: string; zone: [number, number, number, number]; culture: string; ground: string; party: Array<{ id: string; level: number }>; heroSheets?: Record<string, string>; firstSeed?: number; screen?: BattleScreen };

@@ -395,6 +395,10 @@
       ]
     }
   },
+  "touch": {
+    "mode": "auto",
+    "opacity": 0.6
+  },
   "ship": {
     "targets": [
       "web",

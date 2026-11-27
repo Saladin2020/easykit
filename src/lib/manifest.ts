@@ -11,6 +11,7 @@
  * (src/lib/validate.ts) checks it and every id it references.
  */
 import path from "node:path";
+import { TouchSchema } from "./touch.js";
 import { z } from "zod";
 import { exists, readJson } from "./fsutil.js";
 import type { Template } from "./pipeline.js";
@@ -162,6 +163,8 @@ export const GameManifestSchema = z
       .optional(),
     /** Easy Action document (levels + encounters) used by systems.platformer / systems.actionCombat. */
     action: z.object({ doc: id().default("three_towns"), sources }).optional(),
+    /** On-screen touch controls for phones (Easy UI): mode auto / on / off, look, and control sets per game mode. */
+    touch: TouchSchema.optional(),
     ship: z
       .object({
         targets: z.array(z.enum(["web", "windows", "linux", "android"])).default(["web"]),
@@ -250,6 +253,7 @@ export function manifestToTemplate(m: GameManifest, base: Template): Template {
     items: { shop: m.items.shop },
     ...(m.systems ? { systems: m.systems } : {}),
     ...(m.action ? { action: { doc: m.action.doc } } : {}),
+    ...(m.touch ? { touch: m.touch } : {}),
     battle: b ? { table: b.table, zone: b.zone, culture: b.culture, ground: b.ground, party: b.party, heroSheets: b.heroSheets, firstSeed: b.firstSeed, screen: { timing: b.timing, atbMode: b.atbMode, layout: b.layout, status: b.status } } : undefined,
     save: { schema: m.save.schema, ...(m.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
   };
@@ -279,6 +283,7 @@ export function templateToManifest(t: Template, o: { name: string; engine: "godo
     save: { schema: t.save.schema, ...(t.save.gameStringsOnly ? { gameStringsOnly: true } : {}) },
     ...(t.systems ? { systems: t.systems } : {}),
     ...(t.action ? { action: { doc: t.action.doc } } : {}),
+    ...(t.touch ? { touch: t.touch } : {}),
     ...(o.ship ? { ship: o.ship } : {}),
   };
 }

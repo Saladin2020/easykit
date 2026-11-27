@@ -149,6 +149,16 @@ pixel font and a battle.
 
 `easy validate` cross-checks them, `easy build` writes `kit/systems.json` for both engines (and `kit.json` → `systemsFile`), the Studio shows a **Game systems** section, and `easy doctor` lists which systems the installed tool versions provide. Platformer / action combat add an `action` build step. It exports the `action.doc` Easy Action document (default `three_towns`, extra documents via `action.sources`) to `web/action/` and `godot/easyaction/`.
 
+## Touch controls for phones
+
+`game.easy.json` → `"touch": { "mode": "auto", "opacity": 0.6, "size": 1, "style": "stick", "menuKey": "Escape", "profiles": { … } }`.
+The web build writes `web/kit/touch.json` (your profiles merged over the defaults: `map` 8-way + E / Z / B, `street`
+← → + E, `action` stick + jump / J / K, `battle`, `menu`, `dialogue`) and the game mounts Easy UI's
+`easyui-touch.js`: a semi-transparent pixel-art stick (or D-pad) and buttons that send the game's own keys, shown on
+touch screens only (`auto`), multitouch, safe-area aware, portrait + landscape. The page disables pinch-zoom and
+scrolling. Godot games get `easyui/easyui_touch.gd` in the Easy UI export (TouchScreenButtons + a stick pressing InputMap
+actions). `easy validate` rejects duplicate button ids, more than 6 buttons, or a profile with no controls.
+
 ## Project layout
 
 ```

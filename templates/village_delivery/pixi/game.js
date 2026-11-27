@@ -519,6 +519,8 @@ export async function startGame(PIXI, mount) {
     clock.running = m === "play";
     ctl.speed = m === "play" ? SPEED : 0;
     if (m !== "play") map.keys.clear();
+    // touch controls (Easy UI): the control set follows the mode
+    globalThis.__easyTouch?.setProfile(m === "play" ? "map" : m === "battle" ? "battle" : m === "dialogue" ? "dialogue" : "menu");
     refreshPrompt();
   }
 
@@ -781,6 +783,17 @@ export async function startGame(PIXI, mount) {
   app.canvas.addEventListener("pointerdown", () => {
     if (state.mode === "dialogue" && box.state !== "choices") box.advance();
   });
+
+  // On-screen touch controls for phones (Easy UI easyui-touch.js; kit/touch.json from game.easy.json `touch`).
+  if (kit.touchFile) {
+    try {
+      const tc = await (await fetch(kit.touchFile)).json();
+      const { mountTouchControls } = await import("./ui/easyui-touch.js");
+      globalThis.__easyTouch = mountTouchControls({ profiles: tc.profiles, profile: "menu", mode: tc.mode, opacity: tc.opacity, size: tc.size, style: tc.style, fit: tc.fit, menu: { label: "≡", key: tc.menuKey }, game: { w: W, h: H } });
+    } catch (err) {
+      console.warn("touch controls unavailable", err);
+    }
+  }
 
   await loadBox();
   refreshTexts();
