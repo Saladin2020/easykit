@@ -19,10 +19,10 @@ const ok = (cond, label) => {
 };
 
 const tools = JSON.parse(run("tools", "--json").out);
-ok(tools.tools.length === 18 && tools.kit.serve === 8908, "tools --json lists 18 tools + kit ports");
+ok(tools.tools.length === 19 && tools.kit.serve === 8908, "tools --json lists 19 tools + kit ports");
 const doc = run("doctor", "--json");
 const report = JSON.parse(doc.out);
-ok(report.tools.length === 18 && typeof report.summary === "string", `doctor --json: ${report.summary}`);
+ok(report.tools.length === 19 && typeof report.summary === "string", `doctor --json: ${report.summary}`);
 ok((doc.code === 0) === report.ok, "doctor exit code matches readiness");
 ok(/Easy Kit doctor/.test(run("doctor").out), "doctor text report");
 ok(/no Easy Kit projects/.test(run("status", dir).out), "status on an empty folder");

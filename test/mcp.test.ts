@@ -45,16 +45,16 @@ describe("kit MCP tools (no proxy)", () => {
     for (const t of tools) expect(t.inputSchema.type).toBe("object");
   });
 
-  it("list_tools describes all 18 tools with a namespace prefix", async () => {
+  it("list_tools describes all 19 tools with a namespace prefix", async () => {
     const r = (await ctx.call("list_tools")).json();
-    expect(r.tools).toHaveLength(18);
+    expect(r.tools).toHaveLength(19);
     expect(r.tools.map((t: { prefix: string }) => t.prefix)).toContain(`save${SEP}`);
     expect(r.kit.ports.mcp).toBe(8909);
   });
 
   it("doctor and status answer without siblings", async () => {
     const d = (await ctx.call("doctor")).json();
-    expect(d.tools).toHaveLength(18);
+    expect(d.tools).toHaveLength(19);
     const s = (await ctx.call("status")).json();
     expect(s.proxy).toEqual([]);
     expect(s.projects).toBeNull();

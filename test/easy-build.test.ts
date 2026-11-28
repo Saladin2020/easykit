@@ -10,7 +10,7 @@ const ALL = SIBLINGS && ["portrait", "npc", "font", "battle"].every((t) => (OPTI
 const example = path.resolve(import.meta.dirname, "../examples/tung_sadao");
 const built = (r: BuildReport) => r.steps.filter((s) => s.status === "built").map((s) => (s.tool === "kit" ? s.title.split(" ")[1]! : s.tool));
 
-describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 18 tools)", () => {
+describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 19 tools)", () => {
   let dir: string;
   let cleanup: () => Promise<void>;
   let first: BuildReport;

@@ -1,5 +1,5 @@
 /**
- * game.easy.json — one project manifest for all 18 Easy tools.
+ * game.easy.json — one project manifest for all 19 Easy tools.
  *
  * The manifest says *what* the game is (title, engine, font) and which content each tool contributes, by id:
  * the tilemap, the title scene, the cast (Easy Sprite), portraits, NPC schedules, the dialogue, the quest, the item
@@ -146,8 +146,19 @@ export const GameManifestSchema = z
         lighting: z.union([z.boolean(), z.object({ overlay: z.boolean().default(true), lamps: z.boolean().default(true) }).strict()]).optional(),
         /** Shops open / closed by Easy NPC hours (closed twins from Easy Scene); ids are Easy NPC `shops`. */
         shopHours: z.object({ shops: z.array(id()).default([]) }).strict().optional(),
-        /** Walk-in interiors (Easy Scene scenes: shop / station hall / platform / terminal), seller behind the counter. */
-        interiors: z.object({ scenes: z.array(id()).default([]) }).strict().optional(),
+        /** Walk-in interiors (Easy Interior + Easy Scene). `doors` override the Easy Interior building catalog; omitted doors use that default map. */
+        interiors: z.object({
+          scenes: z.array(id()).default([]),
+          doors: z.array(z.object({
+            building: id(),
+            scene: id().optional(),
+            type: z.string().optional(),
+            seed: z.number().int().optional(),
+            hours: id().optional(),
+            shop: id().optional(),
+            halal: z.boolean().optional(),
+          }).strict()).default([]),
+        }).strict().optional(),
         /** Flooding from the Easy NPC weather: water on streets (Easy FX) and the world map (Easy Tilemap), slower walking, NPCs indoors. */
         flood: z.object({ overlay: z.boolean().default(true), affectsGameplay: z.boolean().default(true) }).strict().optional(),
         /** Train timetables (Easy NPC transit lines): buy a ticket at the station counter, wait on the platform, board. */

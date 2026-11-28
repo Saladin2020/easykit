@@ -36,6 +36,7 @@ export const STEP_DEPS: Record<ToolId, ToolId[]> = {
   battle: ["sprite"],
   save: ["dialogue", "quest", "ui", "items"],
   action: ["battle"],
+  interior: ["scene"],
   ship: [],
 };
 
@@ -58,6 +59,7 @@ const STEP_INPUTS: Record<ToolId, Array<keyof Template>> = {
   battle: ["battle"],
   save: ["save", "dialogue", "quest", "ui"],
   action: ["action", "systems", "battle"],
+  interior: ["scene"],
   ship: [],
 };
 

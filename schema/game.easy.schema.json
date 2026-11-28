@@ -1088,6 +1088,46 @@
                 "type": "string",
                 "pattern": "^[a-z0-9][a-z0-9_-]*$"
               }
+            },
+            "doors": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "building": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "scene": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "seed": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "hours": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "shop": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                  },
+                  "halal": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "building"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "additionalProperties": false
