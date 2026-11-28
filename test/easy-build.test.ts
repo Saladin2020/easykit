@@ -6,11 +6,11 @@ import { initManifest } from "../src/lib/init.js";
 import { parseManifest } from "../src/lib/manifest.js";
 import { SIBLINGS, OPTIONAL_SIBLINGS, tempDir } from "./helpers.js";
 
-const ALL = SIBLINGS && ["portrait", "npc", "font", "battle"].every((t) => (OPTIONAL_SIBLINGS as string[]).includes(t));
+const ALL = SIBLINGS && ["portrait", "npc", "font", "battle", "interior"].every((t) => (OPTIONAL_SIBLINGS as string[]).includes(t));
 const example = path.resolve(import.meta.dirname, "../examples/tung_sadao");
 const built = (r: BuildReport) => r.steps.filter((s) => s.status === "built").map((s) => (s.tool === "kit" ? s.title.split(" ")[1]! : s.tool));
 
-describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 19 tools)", () => {
+describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 19 tools + both engines)", () => {
   let dir: string;
   let cleanup: () => Promise<void>;
   let first: BuildReport;
@@ -23,7 +23,7 @@ describe.skipIf(!ALL)("easy build: examples/tung_sadao (all 19 tools)", () => {
 
   it("builds every tool step in dependency order, then both engines", async () => {
     expect(first.ok, JSON.stringify(first.issues.concat(first.steps.filter((s) => s.error) as never[]))).toBe(true);
-    expect(first.steps.filter((s) => s.status === "built")).toHaveLength(19);
+    expect(first.steps.filter((s) => s.status === "built")).toHaveLength(20); // 18 tools including Easy Interior, then Godot and PixiJS
     const kit = JSON.parse(await readFile(path.join(dir, "TungSadao/web/kit/kit.json"), "utf8"));
     const s = JSON.stringify(kit);
     expect(s).toContain("ตลาดเช้าบ้านทุ่งสะเดา");
