@@ -299,3 +299,11 @@ copied into web builds. See [CREDITS.md](CREDITS.md).
 `shops` / `transit.lines` (a train line listed under flights is an error) and written to `kit/systems.json`.
 `easy doctor` probes Easy NPC (light phases, shop hours, departures, flood), Easy FX (lighting + flood overlays),
 Easy Scene (closed twins / interiors) and Easy Tilemap (station hook, flights, flood) — `systems 16/16`.
+
+## Walk-in interiors (DSK-9 / Easy Interior)
+
+Optional tool `interior` (Easy Interior). `systems.interiors.scenes` lists walk-in
+scene ids; `systems.interiors.doors` can name a building part, scene, seed, hours
+and item shop. If `doors` is omitted, games use Easy Interior's building catalog
+(also stamped as `interior` on Easy Scene building parts). `easy doctor` lists
+Easy Interior when it is installed beside the other tools.

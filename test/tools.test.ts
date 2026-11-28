@@ -12,8 +12,8 @@ beforeAll(async () => {
 afterAll(() => cleanup());
 
 describe("tool registry", () => {
-  it("lists the 18 tools in pipeline order, the 12 core ones first-class", () => {
-    expect(TOOL_IDS).toEqual(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "action", "ship"]);
+  it("lists the 19 tools in pipeline order, the 12 core ones first-class", () => {
+    expect(TOOL_IDS).toEqual(["sprite", "portrait", "scene", "tilemap", "dialogue", "npc", "quest", "font", "ui", "sfx", "fx", "music", "anim", "items", "battle", "save", "action", "interior", "ship"]);
     expect(CORE_TOOL_IDS).toEqual(["sprite", "scene", "tilemap", "dialogue", "quest", "ui", "sfx", "fx", "music", "anim", "items", "save"]);
     expect(BUILD_IDS).not.toContain("ship");
     for (const id of TOOL_IDS) expect(!!TOOLS[id].optional, id).toBe(!(CORE_TOOL_IDS as readonly string[]).includes(id));

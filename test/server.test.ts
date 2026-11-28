@@ -25,7 +25,7 @@ afterAll(() => cleanup());
 describe("dashboard API", () => {
   it("lists tools, templates and projects", async () => {
     const tools = (await (await app.request("/api/tools", { headers: H })).json()) as any;
-    expect(tools.tools).toHaveLength(18);
+    expect(tools.tools).toHaveLength(19);
     const tpl = (await (await app.request("/api/templates", { headers: H })).json()) as any;
     expect(tpl[0].id).toBe("village_delivery");
     const p = (await (await app.request("/api/projects", { headers: H })).json()) as any;

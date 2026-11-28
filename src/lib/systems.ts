@@ -36,7 +36,7 @@ export const SYSTEM_NAMES: Record<SystemId, { th: string; en: string }> = {
   actionCombat: { th: "ต่อสู้แบบเรียลไทม์", en: "Real-time action combat" },
   lighting: { th: "แสงตามเวลา (รุ่งเช้า → ดึก)", en: "Time-of-day lighting" },
   shopHours: { th: "ร้านเปิด / ปิดตามเวลา", en: "Shop opening hours" },
-  interiors: { th: "เดินเข้าร้าน คนขายอยู่หลังเคาน์เตอร์", en: "Walk-in interiors, seller behind the counter" },
+  interiors: { th: "เดินเข้าบ้าน ร้าน และสถานที่ (Easy Interior)", en: "Walk-in interiors (Easy Interior): houses, shops, civic; seller behind the counter" },
   flood: { th: "น้ำท่วม", en: "Flooding" },
   trains: { th: "ตารางรถไฟ ซื้อตั๋ว รอที่ชานชาลา", en: "Train timetables, tickets, platform" },
   flights: { th: "สนามบิน ตารางเที่ยวบิน", en: "Airports and flights" },
@@ -64,7 +64,7 @@ export const SYSTEM_PROBES: Record<SystemId, Array<{ tool: ToolId; file: string;
     { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function shopStatus\b/ },
     { tool: "scene", file: "src/lib/export.ts", marker: /setShopOpen/ },
   ],
-  interiors: [{ tool: "scene", file: "src/lib/sampleTownLife.ts", marker: /function stationHall\b/ }],
+  interiors: [{ tool: "scene", file: "src/shared/buildingInteriors.ts", marker: /export function interiorOf\b/ }],
   flood: [
     { tool: "npc", file: "runtime/pixi/easynpc-core.js", marker: /function floodLevel\b/ },
     { tool: "fx", file: "runtime/pixi/easyfx-pixi.js", marker: /function floodDepth\b/ },

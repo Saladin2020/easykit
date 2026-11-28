@@ -163,6 +163,7 @@ export const STEP_TITLES: Record<ToolId, string> = {
   font: "มะขาม pixel font for HUD + dialogue",
   battle: "paddy-field encounters + party",
   action: "jump / climb levels + real-time skirmishes",
+  interior: "walk-in rooms from a type and seed",
   ship: "release builds (easykit ship)",
   scene: "title backdrop from a side-view scene",
   tilemap: "village map with the generated cast",
@@ -372,6 +373,22 @@ export const STEPS: Record<ToolId, StepFn> = {
     const en = typeof s?.actionCombat === "object" ? s.actionCombat.encounters : [];
     notes.push(`${doc}: levels ${lv.join(", ") || "all"}; real-time encounters ${en.join(", ") || "all"}`);
     return [`.easy/action/exports/${doc}-godot`, `.easy/action/exports/${doc}-pixi`];
+  },
+
+  async interior(c, notes) {
+    if (!c.tpl.systems?.interiors) return [];
+    const home = c.tools.interior?.home;
+    if (!home) {
+      notes.push("Easy Interior is not installed — walk-in rooms stay on the Easy Scene catalog defaults");
+      return [];
+    }
+    await initTool(c, "interior");
+    const sceneWs = c.ws("scene");
+    if (await exists(sceneWs)) {
+      await cli(c, "interior", ["init", "--workspace", sceneWs], false);
+      notes.push("generated interiors into the Easy Scene workspace (catalog doors apply when systems.interiors.doors is omitted)");
+    }
+    return [".easy/interior"];
   },
 
   async ship() {

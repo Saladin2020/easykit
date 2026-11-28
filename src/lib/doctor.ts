@@ -141,7 +141,7 @@ export function doctor(opts: { cfg?: KitConfig; configPath?: string | null; env?
     xvfb: opts.engines === false ? false : which("xvfb-run", opts.env) !== null,
   };
   const ready = tools.filter((t) => t.installed && t.built && t.deps).length;
-  // The first twelve are required; the optional five only count against `ok` when installed but not built.
+  // The first twelve are required; optional tools only count against `ok` when installed but not built.
   const blocking = tools.filter((t) => !(t.installed && t.built && t.deps) && (t.installed || !TOOLS[t.id].optional));
   const systems = probeSystems((t) => resolved[t]?.home ?? null);
   return { ok: blocking.length === 0, config: loaded.path, tools, engines, systems, summary: `${ready}/${tools.length} Easy tools ready` };

@@ -23,7 +23,7 @@ async function exercise(client, label) {
   for (const k of ["new_project", "doctor", "status"]) if (!kit.includes(k)) fail(`${label}: missing ${k}`);
   const d = body(await client.callTool({ name: "doctor", arguments: {} }));
   console.log(`[${label}] doctor: ${d.summary}`);
-  if (d.tools?.length !== 18) fail(`${label}: doctor`);
+  if (d.tools?.length !== 19) fail(`${label}: doctor`);
   const s = body(await client.callTool({ name: "status", arguments: {} }));
   if (!Array.isArray(s.proxy)) fail(`${label}: status`);
   return { byNs, doctor: d };
